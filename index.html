@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AI Mentor Pro | LGS 2026</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root { --p-color: #6366f1; --base-text-size: 16px; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; font-size: var(--base-text-size); transition: all 0.2s ease; background: #f8fafc; overflow-x: hidden; }
+        .glass-card { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.2); box-shadow: 0 8px 32px rgba(0,0,0,0.05); }
+        .theme-sakin { --p-color: #3B82F6; }
+        .theme-enerjik { --p-color: #F59E0B; }
+        .theme-odak { --p-color: #8B5CF6; }
+        .theme-gece { --p-color: #6366f1; background: #0f172a; color: white; }
+        .theme-gece .glass-card { background: #1e293b; color: white; border-color: rgba(255,255,255,0.05); }
+        .theme-orman { --p-color: #10b981; background: #f0fdf4; }
+        .theme-limon { --p-color: #eab308; background: #fefce8; }
+        .theme-pembe { --p-color: #ec4899; background: #fdf2f8; }
+
+        .active-tab { color: var(--p-color) !important; }
+        .bg-primary { background-color: var(--p-color); }
+        .text-primary { color: var(--p-color); }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .page-transition { animation: fadeIn 0.3s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        .touch-feedback:active { transform: scale(0.96); transition: 0.1s; }
+        
+        .flashcard { perspective: 1000px; height: 180px; }
+        .flashcard-inner { transition: transform 0.6s; transform-style: preserve-3d; cursor: pointer; height: 100%; }
+        .is-flipped { transform: rotateY(180deg); }
+        .flashcard-front, .flashcard-back { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; display: flex; align-items: center; justify-content: center; border-radius: 1.5rem; padding: 1.5rem; text-align: center; }
+        .flashcard-back { transform: rotateY(180deg); background-color: var(--p-color); color: white; }
+
+        .chat-messages { flex: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 12px; height: 50vh; }
+        .chat-bubble { max-width: 85%; padding: 12px 16px; border-radius: 1.25rem; font-size: 0.9rem; font-weight: 600; line-height: 1.5; position: relative; animation: fadeIn 0.2s ease-out; }
+        .chat-user { align-self: flex-end; background: var(--p-color); color: white; border-bottom-right-radius: 4px; }
+        .chat-ai { align-self: flex-start; background: white; color: #1e293b; border: 1px solid #f1f5f9; border-bottom-left-radius: 4px; }
+
+        .progress-bar { transition: width 1s ease-in-out; }
+    </style>
+</head>
+<body class="theme-sakin overflow-hidden">
+    <div id="app" class="h-screen w-full flex flex-col max-w-md mx-auto relative shadow-2xl bg-white/50">
+        
+        <!-- Header -->
+        <header class="p-4 pt-6 flex justify-between items-center bg-white/90 backdrop-blur-md z-30 border-b border-gray-100">
+            <div class="flex items-center gap-3">
+                <div id="header-avatar" class="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white shadow-lg overflow-hidden border border-white/20">
+                    <i class="fas fa-user text-lg"></i>
+                </div>
+                <div>
+                    <h1 id="user-display" class="text-sm font-black leading-none">Can ✨</h1>
+                    <div class="flex items-center gap-2 mt-1">
+                        <span id="points-display" class="text-[9px] font-black text-primary uppercase">1250 Puan</span>
+                        <span id="streak-badge" class="bg-orange-100 text-orange-600 text-[8px] px-2 py-0.5 rounded-full font-bold">🔥 0 GÜN</span>
+                    </div>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <button onclick="changeFontSize(-1)" class="w-7 h-7 rounded-lg bg-gray-100 flex items-center justify-center text-xs font-bold shadow-sm">-</button>
+                <button onclick="changeFontSize(1)" class="w-7 h-7 rounded-lg bg-gray-100 flex items-center justify-center text-xs font-bold shadow-sm">+</button>
+                <div class="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-xl text-center min-w-[50px]">
+                    <span id="cd-days" class="font-black text-sm block">--</span>
+                    <span class="text-[7px] font-bold uppercase tracking-widest">GÜN</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main id="main-content" class="flex-1 overflow-y-auto px-4 pb-32 pt-4 hide-scrollbar">
+            <!-- Render Area -->
+        </main>
+
+        <!-- Navigation -->
+        <nav class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white/95 backdrop-blur-xl border-t border-gray-100 px-1 py-4 flex justify-between items-center z-40 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-[0_-4px_20px_rgba(0,0,0,0.03)] overflow-x-auto">
+            <button onclick="router.navigate('home')" class="nav-btn flex flex-col items-center gap-1 text-gray-400 min-w-[50px]" data-page="home">
+                <i class="fas fa-home text-lg"></i>
+                <span class="text-[7px] font-bold uppercase">Panel</span>
+            </button>
+            <button onclick="router.navigate('exams')" class="nav-btn flex flex-col items-center gap-1 text-gray-400 min-w-[50px]" data-page="exams">
+                <i class="fas fa-chart-line text-lg"></i>
+                <span class="text-[7px] font-bold uppercase">Deneme</span>
+            </button>
+            <button onclick="router.navigate('coach')" class="nav-btn flex flex-col items-center gap-1 text-gray-400 min-w-[60px]" data-page="coach">
+                <div class="w-10 h-10 bg-primary rounded-full -mt-10 flex items-center justify-center text-white shadow-xl border-4 border-white">
+                    <i class="fas fa-comment-dots text-lg"></i>
+                </div>
+                <span class="text-[7px] font-bold uppercase">AI Koç</span>
+            </button>
+            <button onclick="router.navigate('tasks')" class="nav-btn flex flex-col items-center gap-1 text-gray-400 min-w-[50px]" data-page="tasks">
+                <i class="fas fa-check-double text-lg"></i>
+                <span class="text-[7px] font-bold uppercase">Görev</span>
+            </button>
+            <button onclick="router.navigate('reports')" class="nav-btn flex flex-col items-center gap-1 text-gray-400 min-w-[50px]" data-page="reports">
+                <i class="fas fa-file-alt text-lg"></i>
+                <span class="text-[7px] font-bold uppercase">Rapor</span>
+            </button>
+            <button onclick="router.navigate('english')" class="nav-btn flex flex-col items-center gap-1 text-gray-400 min-w-[50px]" data-page="english">
+                <i class="fas fa-language text-lg"></i>
+                <span class="text-[7px] font-bold uppercase">Kelime</span>
+            </button>
+            <button onclick="router.navigate('settings')" class="nav-btn flex flex-col items-center gap-1 text-gray-400 min-w-[50px]" data-page="settings">
+                <i class="fas fa-user-cog text-lg"></i>
+                <span class="text-[7px] font-bold uppercase">Profil</span>
+            </button>
+        </nav>
+
+        <div id="modal-container" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm transition-all"></div>
+    </div>
+
+    <script>
+        // --- DATA & POOLS ---
+        const subjects = [
+            { id: 'tur', name: 'Türkçe', max: 20, weight: 4 },
+            { id: 'mat', name: 'Matematik', max: 20, weight: 4 },
+            { id: 'fen', name: 'Fen Bilimleri', max: 20, weight: 4 },
+            { id: 'ink', name: 'İnkılap Tarihi', max: 10, weight: 1 },
+            { id: 'din', name: 'Din Kültürü', max: 10, weight: 1 },
+            { id: 'ing', name: 'İngilizce', max: 10, weight: 1 }
+        ];
+
+        const englishUnits = [
+            { id: 1, name: "Friendship", words: [{en:"Honest", tr:"Dürüst"}, {en:"Generous", tr:"Cömert"}, {en:"Reliable", tr:"Güvenilir"}, {en:"Stubborn", tr:"İnatçı"}, {en:"Loyal", tr:"Sadık"}, {en:"Supportive", tr:"Destekleyici"}, {en:"Arrogant", tr:"Kibirli"}, {en:"Back up", tr:"Destek olmak"}, {en:"Buddy", tr:"Kanka"}, {en:"Count on", tr:"Güvenmek"}, {en:"Get on well", tr:"İyi geçinmek"}, {en:"Secret", tr:"Sır"}, {en:"Trust", tr:"Güvenmek"}, {en:"Tactful", tr:"Anlayışlı"}, {en:"Self-centered", tr:"Bencil"}, {en:"Jealous", tr:"Kıskanç"}, {en:"Bad-tempered", tr:"Kötü huylu"}, {en:"Aggressive", tr:"Saldırgan"}, {en:"Amusing", tr:"Eğlenceli"}, {en:"Laid-back", tr:"Gevşek/Rahat"}] },
+            { id: 2, name: "Teen Life", words: [{en:"Trendy", tr:"Moda"}, {en:"Unbearable", tr:"Dayanılmaz"}, {en:"Casual", tr:"Günlük"}, {en:"Terrific", tr:"Müthiş"}, {en:"Ridiculous", tr:"Gülünç"}, {en:"Impressive", tr:"Etkileyici"}, {en:"Fashionable", tr:"Modaya uygun"}, {en:"Snob", tr:"Züppe"}, {en:"Camping", tr:"Kamp yapma"}, {en:"High-heeled", tr:"Yüksek topuklu"}, {en:"Skateboarding", tr:"Kaykay yapma"}, {en:"Exciting", tr:"Heyecan verici"}, {en:"Boring", tr:"Sıkıcı"}, {en:"Fond of", tr:"Düşkün olmak"}, {en:"Interested in", tr:"İlgili olmak"}, {en:"Skydiving", tr:"Hava dalışı"}, {en:"Chatting", tr:"Sohbet etme"}, {en:"Trekking", tr:"Doğa yürüyüşü"}, {en:"Routine", tr:"Rutin"}, {en:"Harmonic", tr:"Uyumlu"}] },
+            { id: 3, name: "In The Kitchen", words: [{en:"Chop", tr:"Doğramak"}, {en:"Dice", tr:"Küp doğramak"}, {en:"Mash", tr:"Ezmek"}, {en:"Peel", tr:"Soymak"}, {en:"Stir", tr:"Karıştırmak"}, {en:"Whisk", tr:"Çırpmak"}, {en:"Knead", tr:"Yoğurmak"}, {en:"Steam", tr:"Buharda pişirmek"}, {en:"Bake", tr:"Fırında pişirmek"}, {en:"Grill", tr:"Izgara yapmak"}, {en:"Boil", tr:"Haşlamak"}, {en:"Fry", tr:"Kızartmak"}, {en:"Spice", tr:"Baharat"}, {en:"Salty", tr:"Tuzlu"}, {en:"Sour", tr:"Ekşi"}, {en:"Sweet", tr:"Tatlı"}, {en:"Bitter", tr:"Acı"}, {en:"Tasty", tr:"Lezzetli"}, {en:"Ingredients", tr:"Malzemeler"}, {en:"Recipe", tr:"Tarif"}] },
+            { id: 4, name: "On The Phone", words: [{en:"Engaged", tr:"Meşgul"}, {en:"Hang up", tr:"Kapatmak"}, {en:"Hold on", tr:"Beklemek"}, {en:"Connect", tr:"Bağlanmak"}, {en:"Available", tr:"Müsait"}, {en:"Memo", tr:"Not"}, {en:"Put through", tr:"Bağlamak"}, {en:"Dial", tr:"Numara çevirmek"}, {en:"Extension", tr:"Dahili hat"}, {en:"Leave a message", tr:"Mesaj bırakmak"}, {en:"Call center", tr:"Çağrı merkezi"}, {en:"Appointment", tr:"Randevu"}, {en:"Customer services", tr:"Müşteri hizmetleri"}, {en:"Pick up", tr:"Açmak/Cevaplamak"}, {en:"Communication", tr:"İletişim"}, {en:"Social networks", tr:"Sosyal ağlar"}, {en:"Texting", tr:"Mesajlaşma"}, {en:"Face to face", tr:"Yüz yüze"}, {en:"Emergency", tr:"Acil durum"}, {en:"Busy", tr:"Meşgul"}] },
+            { id: 5, name: "The Internet", words: [{en:"Browser", tr:"Tarayıcı"}, {en:"Attachment", tr:"Ek dosya"}, {en:"Upload", tr:"Yüklemek"}, {en:"Log in", tr:"Giriş yapmak"}, {en:"Password", tr:"Şifre"}, {en:"Download", tr:"İndirmek"}, {en:"Social media", tr:"Sosyal medya"}, {en:"Website", tr:"Web sitesi"}, {en:"Account", tr:"Hesap"}, {en:"Click", tr:"Tıklamak"}, {en:"Connection", tr:"Bağlantı"}, {en:"Log out", tr:"Çıkış yapmak"}, {en:"Online", tr:"Çevrimiçi"}, {en:"Offline", tr:"Çevrimdışı"}, {en:"Search engine", tr:"Arama motoru"}, {en:"Update", tr:"Güncelleme"}, {en:"Virus", tr:"Virüs"}, {en:"Screen", tr:"Ekran"}, {en:"Wireless", tr:"Kablosuz"}, {en:"Surf", tr:"Gezinmek"}] },
+            { id: 6, name: "Adventures", words: [{en:"Skydiving", tr:"Hava dalışı"}, {en:"Caving", tr:"Mağaracılık"}, {en:"Risk", tr:"Risk"}, {en:"Fascinating", tr:"Büyüleyici"}, {en:"Extreme", tr:"Uç"}, {en:"Rafting", tr:"Rafting"}, {en:"Paragliding", tr:"Yamaç paraşütü"}, {en:"Bungee jumping", tr:"Bungee jumping"}, {en:"Canoeing", tr:"Kanoculuk"}, {en:"Scuba diving", tr:"Tüplü dalış"}, {en:"High-lining", tr:"İp üstünde yürüme"}, {en:"Motor racing", tr:"Motor yarışı"}, {en:"Adrenaline seeker", tr:"Adrenalin tutkunu"}, {en:"Dangerous", tr:"Tehlikeli"}, {en:"Safe", tr:"Güvenli"}, {en:"Experience", tr:"Deneyim"}, {en:"Freedom", tr:"Özgürlük"}, {en:"Equipment", tr:"Ekipman"}, {en:"Courage", tr:"Cesaret"}, {en:"Adventure", tr:"Macera"}] },
+            { id: 7, name: "Tourism", words: [{en:"Ancient", tr:"Antik"}, {en:"Historical", tr:"Tarihi"}, {en:"Accomodation", tr:"Konaklama"}, {en:"Destination", tr:"Varış noktası"}, {en:"All-inclusive", tr:"Her şey dahil"}, {en:"Bed and breakfast", tr:"Yatak ve kahvaltı"}, {en:"Sightseeing", tr:"Gezip görme"}, {en:"Architecture", tr:"Mimari"}, {en:"Tradition", tr:"Gelenek"}, {en:"Landmark", tr:"Simge yapı"}, {en:"Vacation", tr:"Tatil"}, {en:"Souvenir", tr:"Hediyelik eşya"}, {en:"Location", tr:"Konum"}, {en:"Climate", tr:"İklim"}, {en:"Budget", tr:"Bütçe"}, {en:"Tourist attraction", tr:"Turistik yer"}, {en:"Seaside", tr:"Deniz kenarı"}, {en:"Urban", tr:"Kentsel"}, {en:"Rural", tr:"Kırsal"}, {en:"Incredible", tr:"İnanılmaz"}] },
+            { id: 8, name: "Chores", words: [{en:"Ironing", tr:"Ütü yapmak"}, {en:"Dusting", tr:"Toz almak"}, {en:"Sweep", tr:"Süpürmek"}, {en:"Mopping", tr:"Paspaslamak"}, {en:"Tidy up", tr:"Toparlamak"}, {en:"Responsibility", tr:"Sorumluluk"}, {en:"Obligation", tr:"Zorunluluk"}, {en:"Necessary", tr:"Gerekli"}, {en:"Laundry", tr:"Çamaşır"}, {en:"Dishes", tr:"Bulaşıklar"}, {en:"Take out garbage", tr:"Çöpü dışarı atmak"}, {en:"Feed the pet", tr:"Evcil hayvanı beslemek"}, {en:"Vacuum", tr:"Vakumlamak/Süpürmek"}, {en:"Load the dishwasher", tr:"Bulaşık makinesini doldurmak"}, {en:"Set the table", tr:"Sofrayı kurmak"}, {en:"Do the grocery shopping", tr:"Mutfak alışverişi yapmak"}, {en:"Task", tr:"Görev"}, {en:"Cooperative", tr:"İşbirliği yapan"}, {en:"Obey", tr:"İtaat etmek"}, {en:"Fairness", tr:"Adalet"}] },
+            { id: 9, name: "Science", words: [{en:"Laboratory", tr:"Laboratuvar"}, {en:"Discovery", tr:"Keşif"}, {en:"Invention", tr:"İcat"}, {en:"Vaccination", tr:"Aşılama"}, {en:"Cure", tr:"Tedavi"}, {en:"Researcher", tr:"Araştırmacı"}, {en:"High-tech", tr:"Yüksek teknoloji"}, {en:"Achievement", tr:"Başarı"}, {en:"Space", tr:"Uzay"}, {en:"DNA", tr:"DNA"}, {en:"Cell", tr:"Hücre"}, {en:"Evolution", tr:"Evrim"}, {en:"Gravity", tr:"Yerçekimi"}, {en:"Microscope", tr:"Mikroskop"}, {en:"Solar system", tr:"Güneş sistemi"}, {en:"Planet", tr:"Gezegen"}, {en:"Galaxy", tr:"Galaksi"}, {en:"Chemical", tr:"Kimyasal"}, {en:"Scientific", tr:"Bilimsel"}, {en:"Explorer", tr:"Kaşif"}] },
+            { id: 10, name: "Natural Forces", words: [{en:"Drought", tr:"Kuraklık"}, {en:"Avalanche", tr:"Çığ"}, {en:"Landslide", tr:"Heyelan"}, {en:"Flood", tr:"Sel"}, {en:"Earthquake", tr:"Deprem"}, {en:"Tsunami", tr:"Tsunami"}, {en:"Global warming", tr:"Küresel ısınma"}, {en:"Volcano", tr:"Volkan"}, {en:"Hurricane", tr:"Kasırga"}, {en:"Deforestation", tr:"Ormansızlaşma"}, {en:"Famine", tr:"Kıtlık"}, {en:"Erosion", tr:"Erozyon"}, {en:"Pollution", tr:"Kirlilik"}, {en:"Natural disaster", tr:"Doğal afet"}, {en:"Environment", tr:"Çevre"}, {en:"Precaution", tr:"Önlem"}, {en:"Magnitude", tr:"Şiddet (deprem)"}, {en:"Tornado", tr:"Hortum"}, {en:"Waste", tr:"Atık"}, {en:"Recycling", tr:"Geri dönüşüm"}] }
+        ];
+
+        const storeItems = [
+            { id: 'theme_enerjik', name: 'Enerji Teması', price: 400, type: 'theme', value: 'enerjik', icon: '🔥' },
+            { id: 'theme_odak', name: 'Odak Teması', price: 600, type: 'theme', value: 'odak', icon: '🔮' },
+            { id: 'theme_orman', name: 'Doğa Teması', price: 800, type: 'theme', value: 'orman', icon: '🌿' },
+            { id: 'theme_gece', name: 'Gece Pro', price: 1200, type: 'theme', value: 'gece', icon: '🌙' },
+            { id: 'item_coffee', name: 'AI Mentor Kahvesi', price: 200, type: 'gift', value: '☕', icon: '☕' },
+            { id: 'item_pizza', name: 'Başarı Pizzası', price: 500, type: 'gift', value: '🍕', icon: '🍕' }
+        ];
+
+        const advicePool = {
+            excellent: ["Zirvedesin şampiyon! Bu disiplin seni başarıya götürür.", "Kusursuz ilerliyorsun, böyle devam.", "Harika bir çalışma disiplini örneği!"],
+            good: ["Oldukça iyisin, 1-2 kilit konuya tekrar bakarsan fullersin.", "Netlerin istikrarlı, zirveye ramak kaldı.", "Gelişimin umut verici."],
+            average: ["Temelin var ama pratik eksiğin netlerine yansıyor.", "Yanlışlarını analiz etmelisin.", "Vites artırma zamanı geldi."],
+            low: ["Pes etmek yok! Bugün yeni bir başlangıç yapıyoruz.", "Temel kavramlara dönmelisin.", "Hataların senin rehberindir."]
+        };
+
+        const coachQuickReplies = [
+            { text: "Naber? 👋", q: "naber" },
+            { text: "Sıkıldım 😔", q: "sıkıldım" },
+            { text: "Netlerim düşük 📈", q: "netlerim düşük" },
+            { text: "Sınav ne zaman? 📅", q: "sınav ne zaman" }
+        ];
+
+        // --- STATE ---
+        let state = {
+            user: { 
+                name: "Can", points: 1250, streak: 0, lastDate: null, theme: 'sakin', adminPin: "1234", fontSize: 16, examDate: "2026-06-14", purchasedItems: ['theme_sakin'], lastVisit: "",
+                profilePic: "", targetSchool: "Fen Lisesi", targetScore: 480
+            },
+            todos: [],
+            exams: [],
+            messages: [],
+            qa: [
+                { "q": "selam", "a": "Selam  ! LGS 2026 yolculuğunda yanındayım. Bugün hangi konuları fethetmeyi planlıyorsun?" },
+                { "q": "günaydın", "a": "Günaydın  ! Yeni bir gün, yeni bir şans. Enerjini topla ve bugün dünkünden daha iyi olmaya odaklan!" },
+                { "q": "başarısızlık korkusu", "a": "Onu bir motivasyon kaynağına dönüştür  ." },
+                { "q": "lgs 2026 gün sayacı", "a": "Azalıyor olması seni korkutmasın, hırslandırsın  ." },
+                { "q": "çalışırken şarkı söylemek", "a": "Daha derin odaklanmaya çalış  ." },
+                { "q": "saygı duyulan bir öğrenci olmak", "a": "Emeklerin seni o noktaya taşıyacak  ." },
+                { "q": "sınav sabahı ne yemeli", "a": "Seni zinde tutacak hafif şeyler  ." },
+                { "q": "sonuçlardan korkmak", "a": "Bugün çalışırsan sonuçlardan korkmana gerek kalmaz  ." },
+                { "q": "tatlı isteği", "a": "Beynin yakıt istiyor  , sağlıklı şekerler ver." },
+                { "q": "kaç soru var toplam", "a": "90 soru, 90 fırsat  !" },
+                { "q": "müzikli çalışma", "a": "Kendini test et, odağın bozuluyorsa kapat  ." },
+                { "q": "şampiyonluk yolu", "a": "Bugün attığın adımlarla döşeniyor  ." },
+                { "q": "dertleşmek", "a": "Ara ara yap ama dersini de aksatma  ." },
+                { "q": "teşekkürler", "a": "Ben teşekkür ederim  ! Seninle bu yolu yürümek harika. Başarılar!" }
+            ],
+            englishProgress: {}
+        };
+
+        const storage = {
+            save: () => { localStorage.setItem('mentor_v21_final', JSON.stringify(state)); updateDashboard(); },
+            load: () => {
+                const s = localStorage.getItem('mentor_v21_final');
+                if (s) {
+                    const saved = JSON.parse(s);
+                    state = { ...state, ...saved, user: { ...state.user, ...saved.user } };
+                }
+                document.body.className = "theme-" + state.user.theme;
+                document.documentElement.style.setProperty('--base-text-size', state.user.fontSize + 'px');
+                checkDailyTasks();
+            }
+        };
+
+        function checkDailyTasks() {
+            const today = new Date().toLocaleDateString('tr-TR');
+            if (state.user.lastVisit !== today) {
+                const dailyTasks = [
+                    { id: Date.now() + 1, text: "Günde 20 Paragraf Çöz", completed: false, isAuto: true },
+                    { id: Date.now() + 2, text: "10 İngilizce Flashcard kelimesi çalış", completed: false, isAuto: true }
+                ];
+                state.todos = [...state.todos.filter(t => !t.isAuto), ...dailyTasks];
+                state.user.lastVisit = today;
+                storage.save();
+            }
+        }
+
+        const utils = {
+            escape: t => { let d = document.createElement('div'); d.textContent = t; return d.innerHTML; },
+            getDaysLeft: () => {
+                let t = new Date(state.user.examDate).getTime();
+                let n = new Date().getTime();
+                return Math.max(0, Math.ceil((t-n)/(1000*60*60*24)));
+            },
+            getAverageScore: () => {
+                if(state.exams.length === 0) return 0;
+                const sum = state.exams.reduce((acc, curr) => acc + parseFloat(curr.score), 0);
+                return (sum / state.exams.length).toFixed(1);
+            },
+            getRandomAdvice: (perc) => {
+                let pool = perc >= 85 ? advicePool.excellent : perc >= 65 ? advicePool.good : perc >= 40 ? advicePool.average : advicePool.low;
+                return pool[Math.floor(Math.random() * pool.length)];
+            }
+        };
+
+        function changeFontSize(dir) {
+            state.user.fontSize = Math.min(Math.max(12, state.user.fontSize + dir), 24);
+            document.documentElement.style.setProperty('--base-text-size', state.user.fontSize + 'px');
+            storage.save();
+        }
+
+        // --- ROUTER ---
+        const router = {
+            currentPage: 'home',
+            navigate(page) {
+                this.currentPage = page;
+                this.render();
+                document.querySelectorAll('.nav-btn').forEach(b => {
+                    b.classList.toggle('active-tab', b.dataset.page === page);
+                    b.classList.toggle('text-primary', b.dataset.page === page);
+                });
+            },
+            render() {
+                const m = document.getElementById('main-content'); m.innerHTML = '';
+                const c = document.createElement('div'); c.className = 'page-transition space-y-6';
+                switch(this.currentPage) {
+                    case 'home': this.renderHome(c); break;
+                    case 'exams': this.renderExams(c); break;
+                    case 'coach': this.renderCoach(c); break;
+                    case 'tasks': this.renderTasks(c); break;
+                    case 'reports': this.renderReports(c); break;
+                    case 'english': this.renderEnglish(c); break;
+                    case 'store': this.renderStore(c); break;
+                    case 'settings': this.renderSettings(c); break;
+                }
+                m.appendChild(c);
+            },
+            renderHome(c) {
+                const active = state.todos.filter(t => !t.completed);
+                const avg = utils.getAverageScore();
+                const target = state.user.targetScore || 500;
+                const progress = Math.min(100, (avg / target) * 100).toFixed(0);
+
+                c.innerHTML = `
+                    <!-- Hedef Kartı -->
+                    <div class="glass-card p-6 rounded-[2.5rem] border-l-8 border-primary shadow-lg overflow-hidden relative">
+                        <div class="flex justify-between items-start mb-4">
+                            <div>
+                                <h3 class="text-[10px] font-black text-primary uppercase tracking-widest">HEDEF LİSE</h3>
+                                <p class="text-xl font-black text-gray-800">${state.user.targetSchool}</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-xs font-bold text-gray-400">Hedef: ${target}</p>
+                                <p class="text-xs font-bold text-gray-400">Ortalama: ${avg}</p>
+                            </div>
+                        </div>
+                        <div class="w-full h-4 bg-gray-100 rounded-full overflow-hidden mb-2">
+                            <div class="h-full bg-primary progress-bar shadow-sm" style="width: ${progress}%"></div>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-[10px] font-bold text-gray-400 uppercase">Gelişim Oranı</span>
+                            <span class="text-xs font-black text-primary">%${progress}</span>
+                        </div>
+                        <i class="fas fa-graduation-cap absolute -bottom-4 -right-4 text-primary/10 text-7xl"></i>
+                    </div>
+
+                    <!-- Geri Sayım -->
+                    <div class="glass-card p-6 rounded-[2.5rem] bg-gradient-to-br from-indigo-600 to-indigo-900 text-white border-none shadow-xl">
+                        <h2 class="text-xs font-black uppercase opacity-60">LGS 2026 Geri Sayım</h2>
+                        <div class="flex items-baseline gap-2 mt-2">
+                            <span class="text-5xl font-black">${utils.getDaysLeft()}</span>
+                            <span class="text-lg font-bold opacity-80 uppercase">Gün Kaldı</span>
+                        </div>
+                    </div>
+
+                    <!-- Market -->
+                    <div class="space-y-3">
+                         <div class="flex justify-between items-center px-1">
+                            <h3 class="text-xs font-black uppercase text-gray-400">Markette Bugün</h3>
+                            <button onclick="router.navigate('store')" class="text-[9px] font-black text-primary uppercase">Hepsi</button>
+                         </div>
+                         <div class="flex gap-3 overflow-x-auto pb-2 hide-scrollbar">
+                            ${storeItems.map(item => `
+                                <div class="glass-card min-w-[120px] p-4 rounded-3xl text-center shadow-sm">
+                                    <div class="text-3xl mb-1">${item.icon}</div>
+                                    <p class="text-[8px] font-black uppercase mb-2 truncate text-gray-600">${item.name}</p>
+                                    <button onclick="buyItem('${item.id}')" class="bg-primary text-white text-[8px] font-black px-3 py-1.5 rounded-full uppercase shadow-sm active:scale-95 transition-all">${item.price} P.</button>
+                                </div>
+                            `).join('')}
+                         </div>
+                    </div>
+
+                    <!-- Tüm Görevler Listesi (Active) -->
+                    <div class="space-y-3">
+                         <div class="flex justify-between items-center px-1">
+                            <h3 class="text-xs font-black uppercase text-gray-400">Bekleyen Görevler</h3>
+                            <button onclick="router.navigate('tasks')" class="text-[9px] font-black text-primary uppercase">Yönet</button>
+                         </div>
+                         ${active.length === 0 ? '<p class="text-xs text-gray-400 italic text-center p-4">Tebrikler! Bekleyen görevin yok.</p>' : 
+                         active.map(t => `
+                            <div class="glass-card p-4 rounded-2xl flex justify-between items-center border-l-4 border-primary shadow-sm mb-2">
+                                <span class="text-xs font-bold text-gray-700">${utils.escape(t.text)}</span>
+                                <button onclick="toggleTodo(${t.id})" class="w-6 h-6 border-2 border-primary rounded-lg transition-all active:scale-90 shadow-sm"></button>
+                            </div>
+                         `).join('')}
+                    </div>
+                `;
+            },
+            renderCoach(c) {
+                c.innerHTML = `
+                    <div class="flex flex-col h-[65vh]">
+                        <div id="chat-messages" class="chat-messages hide-scrollbar">
+                            ${state.messages.map(m => `<div class="flex ${m.sender === 'user' ? 'justify-end' : 'justify-start'}"><div class="chat-bubble ${m.sender === 'user' ? 'chat-user' : 'chat-ai'} shadow-sm">${utils.escape(m.text)}</div></div>`).join('')}
+                        </div>
+                        <div class="flex gap-2 overflow-x-auto py-3 hide-scrollbar">
+                            ${coachQuickReplies.map(r => `<button onclick="sendQuickMsg('${r.q}')" class="bg-white px-3 py-2 rounded-full shadow-sm text-[10px] font-black whitespace-nowrap border border-gray-100 touch-feedback hover:border-primary">${r.text}</button>`).join('')}
+                        </div>
+                        <div class="relative flex items-center gap-2">
+                            <div class="relative flex-1">
+                                <input type="text" id="chat-input" placeholder="Yaz veya sesli sor..." class="w-full bg-white border border-gray-200 p-5 rounded-3xl text-sm font-bold shadow-lg outline-none pr-24">
+                                <div class="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                                    <button onclick="startVoiceRec()" id="voice-btn" class="text-gray-400 hover:text-primary transition-all p-2"><i class="fas fa-microphone text-xl"></i></button>
+                                    <button onclick="sendChat()" class="w-10 h-10 bg-primary text-white rounded-2xl flex items-center justify-center shadow-md"><i class="fas fa-paper-plane text-sm"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex justify-center mt-3"><button onclick="window.speechSynthesis.cancel()" class="text-[9px] font-black uppercase text-red-400 bg-red-50 px-4 py-1.5 rounded-full shadow-sm">Sesi Durdur</button></div>
+                    </div>
+                `;
+                const b = document.getElementById('chat-messages'); if(b) b.scrollTop = b.scrollHeight;
+            },
+            renderExams(c) {
+                c.innerHTML = `
+                    <div class="flex justify-between items-center mb-4"><h2 class="text-xl font-black uppercase tracking-tight">Deneme Analizi</h2><button onclick="openExamModal()" class="bg-primary text-white px-4 py-2 rounded-xl text-[10px] font-black shadow-lg uppercase active:scale-95 transition-all">+ Yeni Kayıt</button></div>
+                    <div class="space-y-3">
+                        ${state.exams.length === 0 ? '<p class="text-center p-12 text-gray-400 text-xs italic bg-white/50 rounded-3xl">Henüz deneme kaydetmedin.</p>' : 
+                        state.exams.slice().reverse().map(e => `<div class="glass-card p-5 rounded-3xl flex justify-between items-center touch-feedback border border-transparent hover:border-primary/20" onclick="showExamDetails(${e.id})"><div class="flex items-center gap-4"><div class="w-12 h-12 bg-indigo-50 text-primary rounded-2xl flex items-center justify-center font-black text-xl shadow-inner">${Math.floor(e.score/100)}</div><div><p class="text-xs font-black text-gray-800">${utils.escape(e.name)}</p><p class="text-[8px] text-gray-400 font-bold uppercase">${e.date}</p></div></div><div class="text-right"><p class="text-lg font-black text-primary">${e.score}</p><p class="text-[7px] font-black text-gray-300 uppercase">PUAN</p></div></div>`).join('')}
+                    </div>
+                `;
+            },
+            renderTasks(c) {
+                const active = state.todos.filter(t => !t.completed);
+                const completed = state.todos.filter(t => t.completed);
+                c.innerHTML = `
+                    <div class="glass-card p-6 rounded-3xl mb-4 border-b-4 border-primary/20"><h3 class="text-xs font-black uppercase text-gray-400 mb-3 tracking-widest">Yeni Görev</h3><div class="flex gap-2"><input type="text" id="task-input" placeholder="Örn: 50 Matematik sorusu..." class="flex-1 bg-gray-50 p-4 rounded-2xl text-xs font-bold outline-none border-none"><button onclick="addTask()" class="bg-primary text-white w-14 rounded-2xl flex items-center justify-center shadow-lg active:scale-90"><i class="fas fa-plus"></i></button></div></div>
+                    <div class="space-y-6"><section><h4 class="text-[10px] font-black uppercase text-indigo-400 mb-3 px-1 tracking-widest">Bekleyenler</h4><div class="space-y-2">${active.map(t => `<div class="glass-card p-4 rounded-2xl flex items-center justify-between border-l-4 border-primary group shadow-sm transition-all"><div class="flex items-center gap-3"><button onclick="toggleTodo(${t.id})" class="w-6 h-6 border-2 border-primary rounded-lg"></button><span class="text-xs font-bold text-gray-700">${utils.escape(t.text)}</span></div><div class="flex gap-2"><button onclick="editTask(${t.id})" class="text-gray-300 hover:text-indigo-500"><i class="fas fa-edit"></i></button><button onclick="deleteTask(${t.id})" class="text-red-200 hover:text-red-500"><i class="fas fa-trash"></i></button></div></div>`).join('')}</div></section><section><h4 class="text-[10px] font-black uppercase text-green-400 mb-3 px-1 tracking-widest">Tamamlananlar</h4><div class="space-y-2 opacity-60">${completed.map(t => `<div class="glass-card p-4 rounded-2xl flex items-center justify-between border-l-4 border-green-500"><div class="flex items-center gap-3"><button onclick="toggleTodo(${t.id})" class="w-6 h-6 bg-green-500 text-white rounded-lg flex items-center justify-center shadow-sm"><i class="fas fa-undo text-[8px]"></i></button><span class="text-xs font-bold text-gray-400 line-through">${utils.escape(t.text)}</span></div><button onclick="deleteTask(${t.id})" class="text-red-300"><i class="fas fa-trash text-sm"></i></button></div>`).join('')}</div></section></div>
+                `;
+            },
+            renderReports(c) {
+                c.innerHTML = `<h2 class="text-lg font-black uppercase tracking-tighter">Başarı Karnesi</h2><div class="glass-card p-5 rounded-[2.5rem] shadow-sm mb-4"><p class="text-[10px] font-black text-gray-400 mb-4 uppercase tracking-widest">Puan Gelişim Grafiği</p><canvas id="mainChart" class="w-full h-48"></canvas></div><div class="glass-card p-5 rounded-[2.5rem] shadow-sm"><p class="text-[10px] font-black text-gray-400 mb-4 uppercase tracking-widest">Branş Analizi (Ortalama Net)</p><canvas id="subjectChart" class="w-full h-48"></canvas></div>`;
+                setTimeout(() => initCharts(), 100);
+            },
+            renderEnglish(c) {
+                c.innerHTML = `<h2 class="text-xl font-black uppercase mb-4 text-cyan-600">İngilizce Maratonu</h2><div class="grid grid-cols-1 gap-3">${englishUnits.map(u => `<div class="glass-card p-5 rounded-3xl flex justify-between items-center touch-feedback transition hover:border-cyan-200" onclick="openFlashcards(${u.id})"><div class="flex items-center gap-4"><div class="w-12 h-12 bg-cyan-50 text-cyan-600 rounded-2xl flex items-center justify-center font-black shadow-inner">${u.id}</div><p class="text-xs font-black text-gray-700 uppercase">${u.name}</p></div><i class="fas fa-chevron-right text-gray-200"></i></div>`).join('')}</div>`;
+            },
+            renderStore(c) {
+                c.innerHTML = `<div class="bg-gradient-to-r from-yellow-400 to-orange-500 p-8 rounded-[3rem] text-white shadow-xl text-center mb-8 relative overflow-hidden"><p class="text-[11px] font-black uppercase opacity-70 tracking-widest">Harcanabilir Puanın</p><h3 class="text-6xl font-black">${state.user.points}</h3><i class="fas fa-coins absolute -bottom-4 -left-4 text-white/10 text-9xl"></i></div><div class="grid grid-cols-2 gap-4 pb-12">${storeItems.map(item => `<div class="glass-card p-6 rounded-[2rem] text-center flex flex-col items-center shadow-sm"><div class="text-5xl mb-3">${item.icon}</div><p class="text-[10px] font-black uppercase text-gray-700 mb-4 tracking-tighter">${item.name}</p><button onclick="buyItem('${item.id}')" ${state.user.purchasedItems?.includes(item.id) ? 'disabled' : ''} class="w-full py-3 rounded-2xl text-[10px] font-black uppercase shadow-sm active:scale-95 ${state.user.purchasedItems?.includes(item.id) ? 'bg-gray-100 text-gray-400' : 'bg-primary text-white shadow-indigo-100'}">${state.user.purchasedItems?.includes(item.id) ? 'SAHİPSİN' : item.price + ' Puan'}</button></div>`).join('')}</div>`;
+            },
+            renderSettings(c) {
+                c.innerHTML = `
+                    <div class="glass-card p-6 rounded-[2.5rem] mb-6 shadow-md border border-primary/10"><h3 class="text-sm font-black uppercase mb-6 text-primary flex items-center gap-2"><i class="fas fa-user-circle"></i> Profil Ayarları</h3><div class="space-y-5"><div class="flex flex-col items-center gap-4 mb-2"><div id="prof-preview" class="w-28 h-28 bg-gray-100 rounded-full flex items-center justify-center overflow-hidden border-4 border-white shadow-xl">${state.user.profilePic ? `<img src="${state.user.profilePic}" class="w-full h-full object-cover">` : '<i class="fas fa-user text-4xl text-gray-300"></i>'}</div><label class="bg-indigo-600 text-white px-6 py-2.5 rounded-2xl text-[10px] font-black uppercase cursor-pointer touch-feedback shadow-lg active:scale-95 transition-all"><i class="fas fa-camera mr-1"></i> Fotoğraf Seç<input type="file" id="prof-file" class="hidden" accept="image/*" onchange="handleProfilePic(this)"></label></div><div class="space-y-1"><label class="text-[9px] font-black text-gray-400 uppercase ml-2">Ad Soyad</label><input type="text" id="prof-name" placeholder="İsim" value="${state.user.name}" class="w-full p-4 bg-gray-50 rounded-2xl text-xs font-bold outline-none"></div><div class="space-y-1"><label class="text-[9px] font-black text-gray-400 uppercase ml-2">Hedef Lise Adı</label><input type="text" id="prof-school" placeholder="Hedef Lise" value="${state.user.targetSchool}" class="w-full p-4 bg-gray-50 rounded-2xl text-xs font-bold outline-none"></div><div class="space-y-1"><label class="text-[9px] font-black text-gray-400 uppercase ml-2">LGS Puan Hedefi</label><input type="number" id="prof-score" placeholder="Hedef Puan" value="${state.user.targetScore}" class="w-full p-4 bg-gray-50 rounded-2xl text-xs font-bold outline-none"></div><button onclick="updateProfile()" class="w-full bg-primary text-white py-4 rounded-2xl font-black uppercase text-xs shadow-xl active:scale-95">KAYDET</button></div></div>
+                    <div class="glass-card p-6 rounded-3xl text-center shadow-md"><h3 class="text-[10px] font-black uppercase text-gray-400 mb-4 tracking-widest">Yönetici Girişi</h3><input type="password" id="pin-in" placeholder="****" class="w-full text-center text-4xl p-5 mt-2 bg-gray-50 rounded-2xl outline-none font-black tracking-[0.5em]" maxlength="4"><button onclick="checkAdmin()" class="w-full bg-gray-800 text-white py-5 mt-4 rounded-2xl font-black uppercase text-xs shadow-xl active:scale-95">PANELİ AÇ</button></div>
+                    <div id="admin-panel" class="hidden space-y-4 pt-4"><div class="glass-card p-6 rounded-3xl"><h4 class="text-xs font-black uppercase mb-3 text-red-500">Sınav Takvimi</h4><input type="date" id="exam-date-in" value="${state.user.examDate}" class="w-full p-4 bg-gray-50 rounded-xl mb-3 font-bold border-none outline-none"><button onclick="updateExamDate()" class="w-full bg-indigo-600 text-white py-3 rounded-xl text-[10px] font-black uppercase">GÜNCELLE</button></div><div class="glass-card p-6 rounded-3xl"><div class="flex justify-between items-center mb-3"><h4 class="text-xs font-black uppercase text-red-500">AI Soru Yönetimi</h4><div class="flex gap-2"><button onclick="exportQA()" class="bg-blue-600 text-white p-2 rounded-lg text-[8px] font-black uppercase shadow-sm">QA İNDİR</button><label class="bg-blue-600 text-white p-2 rounded-lg text-[8px] font-black uppercase shadow-sm cursor-pointer">QA YÜKLE <input type="file" class="hidden" onchange="importQA(this)"></label></div></div><div class="space-y-2 max-h-40 overflow-y-auto mb-4 hide-scrollbar">${state.qa.map((item, idx) => `<div class="flex justify-between items-center p-3 bg-gray-50 rounded-xl text-[10px] border border-gray-100"><span class="font-bold truncate pr-4 text-gray-600">${item.q}</span><button onclick="deleteQA(${idx})" class="text-red-500 hover:scale-110 transition-all"><i class="fas fa-trash"></i></button></div>`).join('')}</div><div class="space-y-2"><input type="text" id="new-q" placeholder="Soru..." class="w-full p-4 bg-gray-50 rounded-2xl text-xs font-bold outline-none"><textarea id="new-a" placeholder="Cevap..." class="w-full p-4 bg-gray-50 rounded-2xl text-xs font-bold outline-none"></textarea><button onclick="addQA()" class="w-full bg-green-500 text-white py-4 rounded-2xl font-black uppercase shadow-lg">LİSTEYE EKLE</button></div></div><div class="glass-card p-6 rounded-3xl"><h4 class="text-xs font-black uppercase mb-3 text-gray-400">Veri Transferi</h4><div class="grid grid-cols-2 gap-2"><button onclick="exportData()" class="bg-gray-800 text-white py-3 rounded-xl text-[9px] font-black">SİSTEM YEDEK</button><label class="bg-indigo-600 text-white py-3 rounded-xl text-[9px] font-black text-center cursor-pointer">YEDEK YÜKLE <input type="file" class="hidden" onchange="importData(this)"></label></div><button onclick="resetSystem()" class="w-full bg-red-500 text-white py-3 rounded-xl text-[9px] font-black uppercase mt-2 shadow-lg">SİSTEMİ SIFIRLA</button></div></div>
+                `;
+            }
+        };
+
+        // --- CORE FUNCTIONS ---
+        function handleProfilePic(input) {
+            const file = input.files[0];
+            if (file) {
+                if (file.size > 1.5 * 1024 * 1024) { alert("Fotoğraf çok büyük! (Maks 1.5MB)"); return; }
+                const reader = new FileReader();
+                reader.onload = e => { state.user.profilePic = e.target.result; const p = document.getElementById('prof-preview'); if(p) p.innerHTML = `<img src="${state.user.profilePic}" class="w-full h-full object-cover">`; storage.save(); };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function updateProfile() {
+            state.user.name = document.getElementById('prof-name').value || "Can";
+            state.user.targetSchool = document.getElementById('prof-school').value || "Fen Lisesi";
+            state.user.targetScore = parseInt(document.getElementById('prof-score').value) || 480;
+            storage.save(); alert("Profil kaydedildi! ✨"); router.navigate('home');
+        }
+
+        function addTask() {
+            const val = document.getElementById('task-input').value.trim();
+            if (!val) return;
+            state.todos.push({ id: Date.now(), text: val, completed: false, isAuto: false });
+            storage.save(); router.render();
+        }
+
+        function toggleTodo(id) {
+            const t = state.todos.find(x => x.id === id);
+            if(t) { t.completed = !t.completed; if(t.completed) state.user.points += 10; storage.save(); router.render(); }
+        }
+
+        function editTask(id) {
+            const t = state.todos.find(x => x.id === id);
+            const newVal = prompt("Görevi Düzenle:", t.text);
+            if(newVal) { t.text = newVal; storage.save(); router.render(); }
+        }
+
+        function deleteTask(id) { if(confirm("Silinsin mi?")) { state.todos = state.todos.filter(x => x.id !== id); storage.save(); router.render(); } }
+
+        // --- MOBILE OPTIMIZED SPEECH ---
+        function speak(t) {
+            if (!window.speechSynthesis) return;
+            window.speechSynthesis.cancel();
+            const u = new SpeechSynthesisUtterance(t);
+            u.lang = 'tr-TR'; 
+            u.rate = 1.0;
+            u.pitch = 1.1;
+            window.speechSynthesis.speak(u);
+        }
+
+        function sendChat() {
+            const input = document.getElementById('chat-input');
+            if (!input) return;
+            const txt = input.value.trim().toLowerCase();
+            if(!txt) return;
+            state.messages.push({ sender: 'user', text: input.value });
+            input.value = ""; router.render();
+            setTimeout(() => {
+                let ans = "Bu harika bir soru! LGS yolunda her zaman yanındayım şampiyon.";
+                if (txt.includes("naber") || txt.includes("nbr") || txt.includes("nabber")) {
+                    const g = ["İyilik, her şey yolunda! Sen nasılsın?", "İyiyim ya sen? Bugün ne yapalım?", "Zıpkın gibiyim!", "Harikayım!"];
+                    ans = g[Math.floor(Math.random() * g.length)];
+                } else if (txt.includes("canım sıkkın") || txt.includes("sıkıldım") || txt.includes("moralim bozuk")) {
+                    ans = "Olabilir, insanız sonuçta. Ama inan bana bu geçecek. İstersen bugünlük hafif bir dersle devam et!";
+                } else if(txt.includes("sınav") || txt.includes("ne zaman") || txt.includes("tarih")) {
+                    ans = `LGS Sınavı ${new Date(state.user.examDate).toLocaleDateString('tr-TR')} tarihinde yapılacak. Önünde ${utils.getDaysLeft()} günün var.`;
+                } else {
+                    const match = state.qa.find(x => txt.includes(x.q.toLowerCase()));
+                    if(match) ans = match.a;
+                }
+                state.messages.push({ sender: 'ai', text: ans });
+                router.render(); storage.save(); speak(ans);
+            }, 600);
+        }
+
+        function sendQuickMsg(q) {
+            const input = document.getElementById('chat-input');
+            if (input) {
+                input.value = q;
+                sendChat();
+            }
+        }
+
+        // AKILLI TELEFONLAR İÇİN GELİŞMİŞ SES TANIMA VE İZİN YÖNETİMİ
+        async function startVoiceRec() {
+            const voiceBtn = document.getElementById('voice-btn');
+            
+            // 1. Tarayıcı Desteği Kontrolü
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if(!SpeechRecognition) {
+                alert("Tarayıcınız ses tanımayı desteklemiyor. Lütfen Chrome veya Safari kullanın.");
+                return;
+            }
+
+            // 2. HTTPS Kontrolü (Mobil tarayıcıların çoğu mikrofon için HTTPS ister)
+            if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost') {
+                alert("Güvenli bağlantı (HTTPS) olmadan mikrofon çalışmayabilir.");
+            }
+
+            // 3. İzinleri Tetikle ve Kontrol Et (navigator.mediaDevices.getUserMedia kullanılarak)
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                // Akış başarıyla alındıysa mikrofon izni var demektir, akışı hemen durdurabiliriz
+                stream.getTracks().forEach(track => track.stop());
+            } catch (err) {
+                console.error("Mikrofon erişim hatası:", err);
+                if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+                    alert("Mikrofon izni reddedildi. Lütfen tarayıcı ayarlarından siteye mikrofon izni verin.");
+                } else {
+                    alert("Mikrofon erişilemiyor. Lütfen başka bir uygulama tarafından kullanılmadığından emin olun.");
+                }
+                return;
+            }
+
+            // 4. Tanımayı Başlat
+            const r = new SpeechRecognition();
+            r.lang = 'tr-TR';
+            r.interimResults = false; // Mobil performansı için sadece kesin sonuçları al
+            r.maxAlternatives = 1;
+            r.continuous = false; // Mobil cihazlarda batarya ve işlem gücü tasarrufu için
+
+            r.onstart = () => {
+                if (voiceBtn) voiceBtn.classList.add('text-red-500', 'animate-pulse');
+                // Dokunsal geri bildirim (destekleyen cihazlarda)
+                if (window.navigator.vibrate) window.navigator.vibrate(50);
+            };
+
+            r.onerror = (e) => {
+                if (voiceBtn) voiceBtn.classList.remove('text-red-500', 'animate-pulse');
+                console.error("Konuşma tanıma hatası:", e.error);
+                if (e.error === 'no-speech') {
+                    // Sessizlik durumu, hata vermeye gerek yok, sadece butonu sıfırla
+                } else if (e.error === 'not-allowed') {
+                    alert("Mikrofon izni gerekli.");
+                }
+            };
+
+            r.onend = () => {
+                if (voiceBtn) voiceBtn.classList.remove('text-red-500', 'animate-pulse');
+            };
+
+            r.onresult = e => {
+                const transcript = e.results[0][0].transcript;
+                const input = document.getElementById('chat-input');
+                if (input) {
+                    input.value = transcript;
+                    sendChat(); // Yazıyı otomatik gönder
+                }
+            };
+            
+            try { 
+                r.start(); 
+            } catch(err) { 
+                console.error("Tanıma başlatma hatası:", err); 
+            }
+        }
+
+        function openExamModal(id = null) {
+            const isEdit = id !== null && id !== 'null'; 
+            const ex = isEdit ? state.exams.find(e => e.id === id) : null;
+            const modal = document.getElementById('modal-container');
+            modal.innerHTML = `
+                <div class="bg-white w-full max-w-sm rounded-[3rem] p-8 max-h-[90vh] overflow-y-auto shadow-2xl">
+                    <h3 class="text-xl font-black uppercase mb-6 text-gray-800">${isEdit ? 'Düzenle' : 'Yeni Deneme'}</h3>
+                    <div class="space-y-4">
+                        <input type="text" id="ex-name" placeholder="Deneme/Yayın Adı" value="${isEdit ? ex.name : ''}" class="w-full p-4 bg-gray-50 rounded-2xl font-bold border-none outline-none shadow-inner">
+                        ${subjects.map(s => `
+                            <div class="p-4 bg-indigo-50/50 rounded-3xl border border-indigo-100">
+                                <p class="text-[10px] font-black text-indigo-600 uppercase mb-3">${s.name}</p>
+                                <div class="grid grid-cols-3 gap-2">
+                                    <div><label class="text-[8px] font-bold text-green-600 uppercase block mb-1">Doğru</label><input type="number" id="d-${s.id}" value="${isEdit ? ex.scores[s.id].d : ''}" class="w-full p-2 rounded-xl text-center font-bold outline-none shadow-sm"></div>
+                                    <div><label class="text-[8px] font-bold text-red-500 uppercase block mb-1">Yanlış</label><input type="number" id="y-${s.id}" value="${isEdit ? ex.scores[s.id].y : ''}" class="w-full p-2 rounded-xl text-center font-bold outline-none shadow-sm"></div>
+                                    <div><label class="text-[8px] font-bold text-gray-400 uppercase block mb-1">Boş</label><input type="number" id="b-${s.id}" value="${isEdit ? ex.scores[s.id].b : ''}" class="w-full p-2 rounded-xl text-center font-bold outline-none shadow-sm"></div>
+                                </div>
+                            </div>
+                        `).join('')}
+                        <button onclick="saveExam(${id ? id : 'null'})" class="w-full bg-primary text-white py-5 rounded-3xl font-black uppercase shadow-xl mt-2 active:scale-95">KAYDET</button>
+                        <button onclick="closeModal()" class="w-full text-gray-400 font-bold uppercase text-[10px] mt-2 py-2">İptal</button>
+                    </div>
+                </div>
+            `;
+            modal.classList.remove('hidden');
+        }
+
+        function saveExam(editId = null) {
+            const name = document.getElementById('ex-name').value.trim() || "Genel Deneme";
+            const scores = {}; let totalNet = 0;
+            subjects.forEach(s => {
+                const d = parseInt(document.getElementById(`d-${s.id}`).value) || 0;
+                const y = parseInt(document.getElementById(`y-${s.id}`).value) || 0;
+                const b = parseInt(document.getElementById(`b-${s.id}`).value) || 0;
+                const net = Math.max(0, d - (y / 3));
+                scores[s.id] = { d, y, b, net: net.toFixed(2), perc: ((d/s.max)*100).toFixed(0) };
+                totalNet += (net * s.weight);
+            });
+            const score = (194.7 + (totalNet * 1.13)).toFixed(2);
+            if(editId && editId !== 'null' && editId !== null) { 
+                const idx = state.exams.findIndex(e => e.id === editId); 
+                state.exams[idx] = { id: editId, name, date: new Date().toLocaleDateString('tr-TR'), scores, score }; 
+            }
+            else { state.exams.push({ id: Date.now(), name, date: new Date().toLocaleDateString('tr-TR'), scores, score }); state.user.points += 100; }
+            storage.save(); closeModal(); router.navigate('exams');
+        }
+
+        function showExamDetails(id) {
+            const ex = state.exams.find(e => e.id === id);
+            const modal = document.getElementById('modal-container');
+            modal.innerHTML = `
+                <div class="bg-white w-full max-w-sm rounded-[2.5rem] p-8 max-h-[85vh] overflow-y-auto hide-scrollbar shadow-2xl">
+                    <div class="flex justify-between items-start mb-6">
+                        <div><p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">KARNE</p><h2 class="text-4xl font-black text-primary">${ex.score}</h2><p class="text-xs font-bold text-gray-400">${ex.name}</p></div>
+                        <button onclick="closeModal()"><i class="fas fa-times text-xl text-gray-300"></i></button>
+                    </div>
+                    <div class="space-y-3 mb-6">
+                        <h4 class="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Branş Tavsiyeleri</h4>
+                        ${subjects.map(s => {
+                            const data = ex.scores[s.id];
+                            return `<div class="p-4 bg-gray-50 rounded-2xl border border-gray-100 shadow-sm"><div class="flex justify-between items-center mb-1"><span class="text-[10px] font-black uppercase text-indigo-600">${s.name}</span><span class="text-xs font-black">${data.net} Net</span></div><p class="text-[9px] font-bold text-gray-400 mb-2">${data.d}D | ${data.y}Y | ${data.b}B</p><p class="text-[10px] font-medium text-gray-600 italic">"Branş Hocan: ${utils.getRandomAdvice(data.perc)}"</p></div>`;
+                        }).join('')}
+                    </div>
+                    <div class="p-6 bg-indigo-900 text-white rounded-[2.5rem] text-center mb-6 shadow-xl border-t-4 border-yellow-400"><i class="fas fa-user-graduate text-3xl mb-3 text-yellow-400"></i><p class="text-[10px] font-black uppercase opacity-60">Rehberlik Servisi</p><p class="text-xs font-semibold mt-2">${ex.score > 450 ? 'Zirvedesin!' : 'Gelişim yolunda emin adımlarla ilerliyorsun.'}</p></div>
+                    <div class="grid grid-cols-2 gap-2"><button onclick="openExamModal(${ex.id})" class="bg-indigo-600 text-white py-4 rounded-2xl font-black uppercase text-[10px] shadow-lg">DÜZENLE</button><button onclick="deleteExam(${ex.id})" class="bg-red-50 text-red-500 py-4 rounded-2xl font-black uppercase text-[10px]">SİL</button></div>
+                </div>
+            `;
+            modal.classList.remove('hidden');
+        }
+
+        function openFlashcards(uid) {
+            const u = englishUnits.find(x => x.id === uid); let idx = 0;
+            const modal = document.getElementById('modal-container');
+            const render = () => {
+                const w = u.words[idx];
+                modal.innerHTML = `<div class="bg-white w-full max-w-sm rounded-[3rem] p-8 shadow-2xl text-center"><div class="flex justify-between items-center mb-6"><span class="text-[10px] font-black text-cyan-500 uppercase">${u.name} - ${idx+1}/${u.words.length}</span><button onclick="closeModal()"><i class="fas fa-times text-gray-300"></i></button></div><div class="flashcard mb-10" onclick="this.querySelector('.flashcard-inner').classList.toggle('is-flipped')"><div class="flashcard-inner"><div class="flashcard-front bg-cyan-50 border-2 border-cyan-100 shadow-inner"><div><h2 class="text-4xl font-black text-cyan-800">${w.en}</h2><p class="text-[8px] mt-4 opacity-30 font-black uppercase">TIKLA ÖĞREN</p></div></div><div class="flashcard-back shadow-lg"><div><h2 class="text-4xl font-black text-white">${w.tr}</h2></div></div></div></div><div class="flex gap-2"><button id="kn-btn" class="flex-1 bg-green-500 text-white py-5 rounded-[1.5rem] font-black text-xs shadow-lg active:scale-95 transition-all">BİLİYORUM</button><button id="dkn-btn" class="flex-1 bg-gray-100 text-gray-400 py-5 rounded-[1.5rem] font-black text-xs active:scale-95 transition-all">BİLMİYORUM</button></div></div>`;
+                document.getElementById('kn-btn').onclick = () => { state.user.points += 5; next(); };
+                document.getElementById('dkn-btn').onclick = () => next();
+            };
+            const next = () => { idx++; if(idx < u.words.length) render(); else { storage.save(); closeModal(); alert("Bravo! Ünite tamamlandı."); } };
+            render(); modal.classList.remove('hidden');
+        }
+
+        function checkAdmin() { if(document.getElementById('pin-in').value === state.user.adminPin) document.getElementById('admin-panel').classList.remove('hidden'); else alert("PIN Hatalı!"); }
+        function updateExamDate() { state.user.examDate = document.getElementById('exam-date-in').value; storage.save(); alert("Güncellendi!"); }
+        function addQA() { const q = document.getElementById('new-q').value; const a = document.getElementById('new-a').value; if(q && a) { state.qa.push({q, a}); storage.save(); router.render(); document.getElementById('admin-panel').classList.remove('hidden'); } }
+        function deleteQA(idx) { state.qa.splice(idx, 1); storage.save(); router.render(); document.getElementById('admin-panel').classList.remove('hidden'); }
+        function exportQA() { const blob = new Blob([JSON.stringify(state.qa, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'qa_bank.json'; a.click(); }
+        function importQA(input) { const fr = new FileReader(); fr.onload = e => { try { const d = JSON.parse(e.target.result); if(Array.isArray(d)) { state.qa = [...state.qa, ...d]; storage.save(); router.render(); alert("Eklendi!"); } } catch(err) { alert("Geçersiz JSON!"); } }; fr.readAsText(input.files[0]); }
+        function exportData() { const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'backup.json'; a.click(); }
+        function importData(input) { const fr = new FileReader(); fr.onload = e => { try { const d = JSON.parse(e.target.result); if(d.qa) { state = {...state, ...d}; storage.save(); router.render(); alert("Yüklendi!"); } } catch(err) { alert("Hata!"); } }; fr.readAsText(input.files[0]); }
+        function buyItem(id) { const item = storeItems.find(i => i.id === id); if(state.user.points >= item.price || state.user.purchasedItems?.includes(id)) { if(!state.user.purchasedItems?.includes(id)) { state.user.points -= item.price; if(!state.user.purchasedItems) state.user.purchasedItems = []; state.user.purchasedItems.push(id); } if(item.type === 'theme') { state.user.theme = item.value; document.body.className = "theme-" + item.value; } storage.save(); router.render(); } else alert("Yetersiz Puan!"); }
+        
+        function initCharts() {
+            if(state.exams.length < 1) return;
+            const ctx1 = document.getElementById('mainChart');
+            if(ctx1) new Chart(ctx1, { type: 'line', data: { labels: state.exams.map(e => e.date), datasets: [{ data: state.exams.map(e => e.score), borderColor: '#6366f1', fill: true, tension: 0.4, backgroundColor: 'rgba(99, 102, 241, 0.1)' }] }, options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: false } } } });
+            const ctx2 = document.getElementById('subjectChart');
+            if(ctx2) {
+                const labels = subjects.map(s => s.name);
+                const dataNets = subjects.map(s => { const subExams = state.exams.map(e => parseFloat(e.scores[s.id].net)); return (subExams.reduce((a,b)=>a+b, 0) / state.exams.length).toFixed(1); });
+                new Chart(ctx2, { type: 'bar', data: { labels: labels, datasets: [{ data: dataNets, backgroundColor: ['#6366f1','#f59e0b','#10b981','#ef4444','#8b5cf6','#ec4899'], borderRadius: 10 }] }, options: { plugins: { legend: { display: false } } } });
+            }
+        }
+
+        function updateDashboard() {
+            const u = document.getElementById('user-display'); if(u) u.textContent = state.user.name + " ✨";
+            const p = document.getElementById('points-display'); if(p) p.textContent = state.user.points + " Puan";
+            const c = document.getElementById('cd-days'); if(c) c.textContent = utils.getDaysLeft();
+            const s = document.getElementById('streak-badge'); if(s) s.textContent = `🔥 ${state.user.streak} GÜN`;
+            const a = document.getElementById('header-avatar'); if(a) { if(state.user.profilePic) { a.innerHTML = `<img src="${state.user.profilePic}" class="w-full h-full object-cover">`; } else { a.innerHTML = `<i class="fas fa-user text-lg"></i>`; } }
+        }
+
+        function closeModal() { document.getElementById('modal-container').classList.add('hidden'); }
+        function resetSystem() { if(confirm("TÜM VERİLER SİLİNECEK!")) { localStorage.clear(); location.reload(); } }
+
+        window.onload = () => { 
+            storage.load(); 
+            updateDashboard(); 
+            router.navigate('home');
+            
+            // Mobil için ses motorunu uyandır
+            document.body.addEventListener('click', () => { 
+                const u = new SpeechSynthesisUtterance(""); 
+                window.speechSynthesis.speak(u); 
+            }, { once: true });
+        };
+    </script>
+</body>
+</html>
