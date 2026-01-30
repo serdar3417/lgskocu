@@ -41,6 +41,27 @@
         .chat-ai { align-self: flex-start; background: white; color: #1e293b; border: 1px solid #f1f5f9; border-bottom-left-radius: 4px; }
 
         .progress-bar { transition: width 1s ease-in-out; }
+        .pomodoro-circle { transition: stroke-dashoffset 1s linear; }
+        
+        .badge { width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); transition: transform 0.3s ease; }
+        .badge:hover { transform: scale(1.1); }
+        .badge.locked { filter: grayscale(100%); opacity: 0.5; }
+        
+        .trophy { font-size: 40px; animation: bounce 2s infinite; }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        
+        .friend-avatar { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+        
+        .topic-item { transition: all 0.2s ease; cursor: pointer; }
+        .topic-item.selected { background-color: #dcfce7; border-color: #22c55e; }
+        .topic-item.completed { background-color: #bbf7d0; border-color: #16a34a; opacity: 0.8; }
+        .topic-item.completed .topic-text { color: #16a34a; font-weight: 700; }
+        
+        .exam-card { border-left: 4px solid var(--p-color); }
+        
+        .topic-badge { width: 20px; height: 20px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; margin-right: 8px; }
+        .topic-badge.completed { background-color: #10b981; color: white; }
+        .topic-badge.pending { background-color: #e5e7eb; color: #6b7280; }
     </style>
 </head>
 <body class="theme-sakin overflow-hidden">
@@ -55,6 +76,7 @@
                 <div>
                     <h1 id="user-display" class="text-sm font-black leading-none">Can ✨</h1>
                     <div class="flex items-center gap-2 mt-1">
+                        <span id="level-display" class="bg-indigo-600 text-white text-[7px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-tighter">Lv. 1</span>
                         <span id="points-display" class="text-[9px] font-black text-primary uppercase">1250 Puan</span>
                         <span id="streak-badge" class="bg-orange-100 text-orange-600 text-[8px] px-2 py-0.5 rounded-full font-bold">🔥 0 GÜN</span>
                     </div>
@@ -103,6 +125,22 @@
                 <i class="fas fa-language text-lg"></i>
                 <span class="text-[7px] font-bold uppercase">Kelime</span>
             </button>
+            <button onclick="router.navigate('topics')" class="nav-btn flex flex-col items-center gap-1 text-gray-400 min-w-[50px]" data-page="topics">
+                <i class="fas fa-book text-lg"></i>
+                <span class="text-[7px] font-bold uppercase">Konular</span>
+            </button>
+            <button onclick="router.navigate('badges')" class="nav-btn flex flex-col items-center gap-1 text-gray-400 min-w-[50px]" data-page="badges">
+                <i class="fas fa-medal text-lg"></i>
+                <span class="text-[7px] font-bold uppercase">Rozet</span>
+            </button>
+            <button onclick="router.navigate('friends')" class="nav-btn flex flex-col items-center gap-1 text-gray-400 min-w-[50px]" data-page="friends">
+                <i class="fas fa-users text-lg"></i>
+                <span class="text-[7px] font-bold uppercase">Arkadaş</span>
+            </button>
+            <button onclick="router.navigate('examschedule')" class="nav-btn flex flex-col items-center gap-1 text-gray-400 min-w-[50px]" data-page="examschedule">
+                <i class="fas fa-calendar-alt text-lg"></i>
+                <span class="text-[7px] font-bold uppercase">Tarih</span>
+            </button>
             <button onclick="router.navigate('settings')" class="nav-btn flex flex-col items-center gap-1 text-gray-400 min-w-[50px]" data-page="settings">
                 <i class="fas fa-user-cog text-lg"></i>
                 <span class="text-[7px] font-bold uppercase">Profil</span>
@@ -123,81 +161,326 @@
             { id: 'ing', name: 'İngilizce', max: 10, weight: 1 }
         ];
 
+        // GÜNCELLENMİŞ İNGİLİZCE KELİMELERİ - 8. SINIF MÜFREDATI
         const englishUnits = [
-            { id: 1, name: "Friendship", words: [{en:"Honest", tr:"Dürüst"}, {en:"Generous", tr:"Cömert"}, {en:"Reliable", tr:"Güvenilir"}, {en:"Stubborn", tr:"İnatçı"}, {en:"Loyal", tr:"Sadık"}, {en:"Supportive", tr:"Destekleyici"}, {en:"Arrogant", tr:"Kibirli"}, {en:"Back up", tr:"Destek olmak"}, {en:"Buddy", tr:"Kanka"}, {en:"Count on", tr:"Güvenmek"}, {en:"Get on well", tr:"İyi geçinmek"}, {en:"Secret", tr:"Sır"}, {en:"Trust", tr:"Güvenmek"}, {en:"Tactful", tr:"Anlayışlı"}, {en:"Self-centered", tr:"Bencil"}, {en:"Jealous", tr:"Kıskanç"}, {en:"Bad-tempered", tr:"Kötü huylu"}, {en:"Aggressive", tr:"Saldırgan"}, {en:"Amusing", tr:"Eğlenceli"}, {en:"Laid-back", tr:"Gevşek/Rahat"}] },
-            { id: 2, name: "Teen Life", words: [{en:"Trendy", tr:"Moda"}, {en:"Unbearable", tr:"Dayanılmaz"}, {en:"Casual", tr:"Günlük"}, {en:"Terrific", tr:"Müthiş"}, {en:"Ridiculous", tr:"Gülünç"}, {en:"Impressive", tr:"Etkileyici"}, {en:"Fashionable", tr:"Modaya uygun"}, {en:"Snob", tr:"Züppe"}, {en:"Camping", tr:"Kamp yapma"}, {en:"High-heeled", tr:"Yüksek topuklu"}, {en:"Skateboarding", tr:"Kaykay yapma"}, {en:"Exciting", tr:"Heyecan verici"}, {en:"Boring", tr:"Sıkıcı"}, {en:"Fond of", tr:"Düşkün olmak"}, {en:"Interested in", tr:"İlgili olmak"}, {en:"Skydiving", tr:"Hava dalışı"}, {en:"Chatting", tr:"Sohbet etme"}, {en:"Trekking", tr:"Doğa yürüyüşü"}, {en:"Routine", tr:"Rutin"}, {en:"Harmonic", tr:"Uyumlu"}] },
-            { id: 3, name: "In The Kitchen", words: [{en:"Chop", tr:"Doğramak"}, {en:"Dice", tr:"Küp doğramak"}, {en:"Mash", tr:"Ezmek"}, {en:"Peel", tr:"Soymak"}, {en:"Stir", tr:"Karıştırmak"}, {en:"Whisk", tr:"Çırpmak"}, {en:"Knead", tr:"Yoğurmak"}, {en:"Steam", tr:"Buharda pişirmek"}, {en:"Bake", tr:"Fırında pişirmek"}, {en:"Grill", tr:"Izgara yapmak"}, {en:"Boil", tr:"Haşlamak"}, {en:"Fry", tr:"Kızartmak"}, {en:"Spice", tr:"Baharat"}, {en:"Salty", tr:"Tuzlu"}, {en:"Sour", tr:"Ekşi"}, {en:"Sweet", tr:"Tatlı"}, {en:"Bitter", tr:"Acı"}, {en:"Tasty", tr:"Lezzetli"}, {en:"Ingredients", tr:"Malzemeler"}, {en:"Recipe", tr:"Tarif"}] },
-            { id: 4, name: "On The Phone", words: [{en:"Engaged", tr:"Meşgul"}, {en:"Hang up", tr:"Kapatmak"}, {en:"Hold on", tr:"Beklemek"}, {en:"Connect", tr:"Bağlanmak"}, {en:"Available", tr:"Müsait"}, {en:"Memo", tr:"Not"}, {en:"Put through", tr:"Bağlamak"}, {en:"Dial", tr:"Numara çevirmek"}, {en:"Extension", tr:"Dahili hat"}, {en:"Leave a message", tr:"Mesaj bırakmak"}, {en:"Call center", tr:"Çağrı merkezi"}, {en:"Appointment", tr:"Randevu"}, {en:"Customer services", tr:"Müşteri hizmetleri"}, {en:"Pick up", tr:"Açmak/Cevaplamak"}, {en:"Communication", tr:"İletişim"}, {en:"Social networks", tr:"Sosyal ağlar"}, {en:"Texting", tr:"Mesajlaşma"}, {en:"Face to face", tr:"Yüz yüze"}, {en:"Emergency", tr:"Acil durum"}, {en:"Busy", tr:"Meşgul"}] },
-            { id: 5, name: "The Internet", words: [{en:"Browser", tr:"Tarayıcı"}, {en:"Attachment", tr:"Ek dosya"}, {en:"Upload", tr:"Yüklemek"}, {en:"Log in", tr:"Giriş yapmak"}, {en:"Password", tr:"Şifre"}, {en:"Download", tr:"İndirmek"}, {en:"Social media", tr:"Sosyal medya"}, {en:"Website", tr:"Web sitesi"}, {en:"Account", tr:"Hesap"}, {en:"Click", tr:"Tıklamak"}, {en:"Connection", tr:"Bağlantı"}, {en:"Log out", tr:"Çıkış yapmak"}, {en:"Online", tr:"Çevrimiçi"}, {en:"Offline", tr:"Çevrimdışı"}, {en:"Search engine", tr:"Arama motoru"}, {en:"Update", tr:"Güncelleme"}, {en:"Virus", tr:"Virüs"}, {en:"Screen", tr:"Ekran"}, {en:"Wireless", tr:"Kablosuz"}, {en:"Surf", tr:"Gezinmek"}] },
-            { id: 6, name: "Adventures", words: [{en:"Skydiving", tr:"Hava dalışı"}, {en:"Caving", tr:"Mağaracılık"}, {en:"Risk", tr:"Risk"}, {en:"Fascinating", tr:"Büyüleyici"}, {en:"Extreme", tr:"Uç"}, {en:"Rafting", tr:"Rafting"}, {en:"Paragliding", tr:"Yamaç paraşütü"}, {en:"Bungee jumping", tr:"Bungee jumping"}, {en:"Canoeing", tr:"Kanoculuk"}, {en:"Scuba diving", tr:"Tüplü dalış"}, {en:"High-lining", tr:"İp üstünde yürüme"}, {en:"Motor racing", tr:"Motor yarışı"}, {en:"Adrenaline seeker", tr:"Adrenalin tutkunu"}, {en:"Dangerous", tr:"Tehlikeli"}, {en:"Safe", tr:"Güvenli"}, {en:"Experience", tr:"Deneyim"}, {en:"Freedom", tr:"Özgürlük"}, {en:"Equipment", tr:"Ekipman"}, {en:"Courage", tr:"Cesaret"}, {en:"Adventure", tr:"Macera"}] },
-            { id: 7, name: "Tourism", words: [{en:"Ancient", tr:"Antik"}, {en:"Historical", tr:"Tarihi"}, {en:"Accomodation", tr:"Konaklama"}, {en:"Destination", tr:"Varış noktası"}, {en:"All-inclusive", tr:"Her şey dahil"}, {en:"Bed and breakfast", tr:"Yatak ve kahvaltı"}, {en:"Sightseeing", tr:"Gezip görme"}, {en:"Architecture", tr:"Mimari"}, {en:"Tradition", tr:"Gelenek"}, {en:"Landmark", tr:"Simge yapı"}, {en:"Vacation", tr:"Tatil"}, {en:"Souvenir", tr:"Hediyelik eşya"}, {en:"Location", tr:"Konum"}, {en:"Climate", tr:"İklim"}, {en:"Budget", tr:"Bütçe"}, {en:"Tourist attraction", tr:"Turistik yer"}, {en:"Seaside", tr:"Deniz kenarı"}, {en:"Urban", tr:"Kentsel"}, {en:"Rural", tr:"Kırsal"}, {en:"Incredible", tr:"İnanılmaz"}] },
-            { id: 8, name: "Chores", words: [{en:"Ironing", tr:"Ütü yapmak"}, {en:"Dusting", tr:"Toz almak"}, {en:"Sweep", tr:"Süpürmek"}, {en:"Mopping", tr:"Paspaslamak"}, {en:"Tidy up", tr:"Toparlamak"}, {en:"Responsibility", tr:"Sorumluluk"}, {en:"Obligation", tr:"Zorunluluk"}, {en:"Necessary", tr:"Gerekli"}, {en:"Laundry", tr:"Çamaşır"}, {en:"Dishes", tr:"Bulaşıklar"}, {en:"Take out garbage", tr:"Çöpü dışarı atmak"}, {en:"Feed the pet", tr:"Evcil hayvanı beslemek"}, {en:"Vacuum", tr:"Vakumlamak/Süpürmek"}, {en:"Load the dishwasher", tr:"Bulaşık makinesini doldurmak"}, {en:"Set the table", tr:"Sofrayı kurmak"}, {en:"Do the grocery shopping", tr:"Mutfak alışverişi yapmak"}, {en:"Task", tr:"Görev"}, {en:"Cooperative", tr:"İşbirliği yapan"}, {en:"Obey", tr:"İtaat etmek"}, {en:"Fairness", tr:"Adalet"}] },
-            { id: 9, name: "Science", words: [{en:"Laboratory", tr:"Laboratuvar"}, {en:"Discovery", tr:"Keşif"}, {en:"Invention", tr:"İcat"}, {en:"Vaccination", tr:"Aşılama"}, {en:"Cure", tr:"Tedavi"}, {en:"Researcher", tr:"Araştırmacı"}, {en:"High-tech", tr:"Yüksek teknoloji"}, {en:"Achievement", tr:"Başarı"}, {en:"Space", tr:"Uzay"}, {en:"DNA", tr:"DNA"}, {en:"Cell", tr:"Hücre"}, {en:"Evolution", tr:"Evrim"}, {en:"Gravity", tr:"Yerçekimi"}, {en:"Microscope", tr:"Mikroskop"}, {en:"Solar system", tr:"Güneş sistemi"}, {en:"Planet", tr:"Gezegen"}, {en:"Galaxy", tr:"Galaksi"}, {en:"Chemical", tr:"Kimyasal"}, {en:"Scientific", tr:"Bilimsel"}, {en:"Explorer", tr:"Kaşif"}] },
-            { id: 10, name: "Natural Forces", words: [{en:"Drought", tr:"Kuraklık"}, {en:"Avalanche", tr:"Çığ"}, {en:"Landslide", tr:"Heyelan"}, {en:"Flood", tr:"Sel"}, {en:"Earthquake", tr:"Deprem"}, {en:"Tsunami", tr:"Tsunami"}, {en:"Global warming", tr:"Küresel ısınma"}, {en:"Volcano", tr:"Volkan"}, {en:"Hurricane", tr:"Kasırga"}, {en:"Deforestation", tr:"Ormansızlaşma"}, {en:"Famine", tr:"Kıtlık"}, {en:"Erosion", tr:"Erozyon"}, {en:"Pollution", tr:"Kirlilik"}, {en:"Natural disaster", tr:"Doğal afet"}, {en:"Environment", tr:"Çevre"}, {en:"Precaution", tr:"Önlem"}, {en:"Magnitude", tr:"Şiddet (deprem)"}, {en:"Tornado", tr:"Hortum"}, {en:"Waste", tr:"Atık"}, {en:"Recycling", tr:"Geri dönüşüm"}] }
+            {
+                id: 1,
+                name: "Friendship",
+                words: [
+                    {en: "Honest", tr: "Dürüst"}, {en: "Generous", tr: "Cömert"}, {en: "Reliable", tr: "Güvenilir"}, {en: "Stubborn", tr: "İnatçı"}, {en: "Loyal", tr: "Sadık"},
+                    {en: "Supportive", tr: "Destekleyici"}, {en: "Arrogant", tr: "Kibirli"}, {en: "Back up", tr: "Destek olmak"}, {en: "Buddy", tr: "Yakın arkadaş"}, {en: "Count on", tr: "Güvenmek"},
+                    {en: "Get on well", tr: "İyi geçinmek"}, {en: "Secret", tr: "Sır"}, {en: "Trust", tr: "Güven"}, {en: "Tactful", tr: "Anlayışlı"}, {en: "Self-centered", tr: "Bencil"},
+                    {en: "Jealous", tr: "Kıskanç"}, {en: "Bad-tempered", tr: "Kötü huylu"}, {en: "Aggressive", tr: "Saldırgan"}, {en: "Amusing", tr: "Eğlenceli"}, {en: "Laid-back", tr: "Rahat"},
+                    {en: "Accept", tr: "Kabul etmek"}, {en: "Apologize", tr: "Özür dilemek"}, {en: "Refuse", tr: "Reddetmek"}, {en: "Reunion", tr: "Tekrar toplanma"}, {en: "Sneaky", tr: "Sinsi"}
+                ]
+            },
+            {
+                id: 2,
+                name: "Teen Life",
+                words: [
+                    {en: "After-school activity", tr: "Okul sonrası etkinlik"}, {en: "Amazing", tr: "Muazzam"}, {en: "Archer", tr: "Okçu"}, {en: "Archery", tr: "Okçuluk"}, {en: "Attend", tr: "Katılmak"},
+                    {en: "Backpack", tr: "Çanta"}, {en: "Bake", tr: "Pişirmek"}, {en: "Basic equipment", tr: "Temel ekipman"}, {en: "Be fond of", tr: "Hoşlanmak"}, {en: "Be keen on", tr: "Çok istemek"},
+                    {en: "Beatbox", tr: "Beatbox müzik"}, {en: "Behave", tr: "Davranmak"}, {en: "Bhangra", tr: "Bhangra müziği"}, {en: "Biographical", tr: "Biyografik"}, {en: "Board game", tr: "Kutu oyunu"},
+                    {en: "Book genre", tr: "Kitap türü"}, {en: "Boring", tr: "Sıkıcı"}, {en: "Branch", tr: "Dal"}, {en: "Bridge", tr: "Köprü"}, {en: "Brother", tr: "Kardeş"},
+                    {en: "Brown", tr: "Kahverengi"}, {en: "Build", tr: "Inşa etmek"}, {en: "Busy", tr: "Meşgul"}, {en: "Calculator", tr: "Hesap makinesi"}, {en: "Camp", tr: "Kamp"}
+                ]
+            },
+            {
+                id: 3,
+                name: "In The Kitchen",
+                words: [
+                    {en: "Appliance", tr: "Aydınlık"}, {en: "Baking", tr: "Pişirme"}, {en: "Cake", tr: "Kek"}, {en: "Cook", tr: "Pişirmek"}, {en: "Dish", tr: "Yemek"},
+                    {en: "Food", tr: "Yemek"}, {en: "Ingredient", tr: "Malzeme"}, {en: "Kitchen", tr: "Mutfak"}, {en: "Ladle", tr: "Kaşık"}, {en: "Knife", tr: "Bıçak"},
+                    {en: "Oven", tr: "Fırın"}, {en: "Pan", tr: "Tava"}, {en: "Recipe", tr: "Tarif"}, {en: "Salt", tr: "Tuz"}, {en: "Spoon", tr: "Kaşık"},
+                    {en: "Stove", tr: "Alev"}, {en: "Table", tr: "Masa"}, {en: "Vegetable", tr: "Sebze"}, {en: "Wok", tr: "Wok tava"}, {en: "Yogurt", tr: "Yoğurt"},
+                    {en: "Zest", tr: "Kabuk"}, {en: "Whisk", tr: "Çırpma"}, {en: "Bowl", tr: "Kase"}, {en: "Cup", tr: "Kupa"}, {en: "Plate", tr: "Tabak"}
+                ]
+            },
+            {
+                id: 4,
+                name: "On The Phone",
+                words: [
+                    {en: "Answer", tr: "Cevaplamak"}, {en: "Call", tr: "Aramak"}, {en: "Cancel", tr: "İptal etmek"}, {en: "Hang up", tr: "Kapatmak"}, {en: "Message", tr: "Mesaj"},
+                    {en: "Missed call", tr: "Cevapsız arama"}, {en: "Phone", tr: "Telefon"}, {en: "Ring", tr: "Zil çalmak"}, {en: "Speak", tr: "Konuşmak"}, {en: "Voice mail", tr: "Sesli kutu"},
+                    {en: "Answer machine", tr: "Cevap makinesi"}, {en: "Caller ID", tr: "Arayan kimlik"}, {en: "Conference call", tr: "Konferans araması"}, {en: "Drop a line", tr: "Bir mesaj at"}, {en: "Get through", tr: "Bağlanmak"},
+                    {en: "Hold on", tr: "Bekle"}, {en: "Keep in touch", tr: "İletişim içinde kalmak"}, {en: "Leave a message", tr: "Mesaj bırakmak"}, {en: "Listen to", tr: "Dinlemek"}, {en: "Make a call", tr: "Arama yapmak"},
+                    {en: "Mobile", tr: "Mobil"}, {en: "Phone number", tr: "Telefon numarası"}, {en: "Press 1", tr: "1'e bas"}, {en: "Ring tone", tr: "Zil sesi"}, {en: "Speaker", tr: "Hoparlör"}
+                ]
+            },
+            {
+                id: 5,
+                name: "The Internet",
+                words: [
+                    {en: "Browser", tr: "Tarayıcı"}, {en: "Click", tr: "Tıklamak"}, {en: "Computer", tr: "Bilgisayar"}, {en: "Download", tr: "İndirmek"}, {en: "Email", tr: "E-posta"},
+                    {en: "File", tr: "Dosya"}, {en: "Internet", tr: "İnternet"}, {en: "Login", tr: "Giriş"}, {en: "Network", tr: "Ağ"}, {en: "Online", tr: "Çevrimiçi"},
+                    {en: "Password", tr: "Şifre"}, {en: "Search", tr: "Aramak"}, {en: "Server", tr: "Sunucu"}, {en: "Software", tr: "Yazılım"}, {en: "Website", tr: "Web sitesi"},
+                    {en: "Wireless", tr: "Kablosuz"}, {en: "Upload", tr: "Yüklemek"}, {en: "URL", tr: "Web adresi"}, {en: "Virtual", tr: "Sanal"}, {en: "Webcam", tr: "Web kamerası"},
+                    {en: "Blog", tr: "Blog"}, {en: "Chat", tr: "Sohbet"}, {en: "Cookie", tr: "Çerez"}, {en: "Database", tr: "Veritabanı"}, {en: "Forum", tr: "Forum"}
+                ]
+            },
+            {
+                id: 6,
+                name: "Adventures",
+                words: [
+                    {en: "Adventure", tr: "Macera"}, {en: "Brave", tr: "Cesur"}, {en: "Dangerous", tr: "Tehlikeli"}, {en: "Explore", tr: "Keşfetmek"}, {en: "Fear", tr: "Korku"},
+                    {en: "Fun", tr: "Eğlence"}, {en: "Game", tr: "Oyun"}, {en: "Journey", tr: "Yolculuk"}, {en: "Jungle", tr: "Ciplak"}, {en: "Mountain", tr: "Dağ"},
+                    {en: "Nature", tr: "Doğa"}, {en: "Outdoor", tr: "Açık hava"}, {en: "Play", tr: "Oynamak"}, {en: "Ride", tr: "Yolculuk"}, {en: "Scary", tr: "Korkunç"},
+                    {en: "Sport", tr: "Spor"}, {en: "Travel", tr: "Seyahat"}, {en: "Vacation", tr: "Tatil"}, {en: "Walk", tr: "Yürümek"}, {en: "Wild", tr: "Vahşi"},
+                    {en: "Camping", tr: "Kamp yapma"}, {en: "Hiking", tr: "Yürüyüş"}, {en: "Safari", tr: "Safari"}, {en: "Skiing", tr: "Kayak yapma"}, {en: "Surfing", tr: "Sörf yapma"}
+                ]
+            },
+            {
+                id: 7,
+                name: "Tourism",
+                words: [
+                    {en: "Accommodation", tr: "Konaklama"}, {en: "Beach", tr: "Plaj"}, {en: "Boat", tr: "Tekne"}, {en: "Hotel", tr: "Otel"}, {en: "Island", tr: "Ada"},
+                    {en: "Journey", tr: "Yolculuk"}, {en: "Luggage", tr: "Bagaj"}, {en: "Map", tr: "Harita"}, {en: "Navigation", tr: "Navigasyon"}, {en: "Passport", tr: "Pasaport"},
+                    {en: "Restaurant", tr: "Restoran"}, {en: "Ticket", tr: "Bilet"}, {en: "Tour", tr: "Tura katılmak"}, {en: "Travel", tr: "Seyahat etmek"}, {en: "Vacation", tr: "Tatil"},
+                    {en: "View", tr: "Manzara"}, {en: "Welcome", tr: "Hoş geldin"}, {en: "Airport", tr: "Havalimanı"}, {en: "Culture", tr: "Kültür"}, {en: "Destination", tr: "Hedef"},
+                    {en: "Guide", tr: "Rehber"}, {en: "Hotel", tr: "Otel"}, {en: "Landscape", tr: "Peyzaj"}, {en: "Museum", tr: "Müze"}, {en: "Tourist", tr: "Turist"}
+                ]
+            },
+            {
+                id: 8,
+                name: "Chores",
+                words: [
+                    {en: "Clean", tr: "Temizlemek"}, {en: "Dust", tr: "Toz almak"}, {en: "Fold", tr: "Katlamak"}, {en: "Iron", tr: "Ütüle"}, {en: "Sweep", tr: "Süpürmek"},
+                    {en: "Wash", tr: "Yıkamak"}, {en: "Work", tr: "Çalışmak"}, {en: "Yard", tr: "Bahçe"}, {en: "Bathroom", tr: "Banyo"}, {en: "Bedroom", tr: "Yatak odası"},
+                    {en: "Kitchen", tr: "Mutfak"}, {en: "Living room", tr: "Oturma odası"}, {en: "Garage", tr: "Garaj"}, {en: "Basement", tr: "Zemin kat"}, {en: "Roof", tr: "Çatı"},
+                    {en: "Floor", tr: "Zemin"}, {en: "Wall", tr: "Duvar"}, {en: "Window", tr: "Pencere"}, {en: "Door", tr: "Kapı"}, {en: "Furniture", tr: "Mobilya"},
+                    {en: "Appliance", tr: "Aydınlık"}, {en: "Broom", tr: "Süpürge"}, {en: "Mop", tr: "Fırça"}, {en: "Vacuum", tr: "Aspiratör"}, {en: "Trash", tr: "Çöp"}
+                ]
+            },
+            {
+                id: 9,
+                name: "Science",
+                words: [
+                    {en: "Atom", tr: "Atom"}, {en: "Cell", tr: "Hücre"}, {en: "Energy", tr: "Enerji"}, {en: "Force", tr: "Kuvvet"}, {en: "Gravity", tr: "Yerçekimi"},
+                    {en: "Heat", tr: "Isı"}, {en: "Light", tr: "Işık"}, {en: "Matter", tr: "Madde"}, {en: "Motion", tr: "Hareket"}, {en: "Sound", tr: "Ses"},
+                    {en: "Technology", tr: "Teknoloji"}, {en: "Chemistry", tr: "Kimya"}, {en: "Biology", tr: "Biyoloji"}, {en: "Physics", tr: "Fizik"}, {en: "Geology", tr: "Jeoloji"},
+                    {en: "Experiment", tr: "Deney"}, {en: "Hypothesis", tr: "Hipotez"}, {en: "Research", tr: "Araştırma"}, {en: "Theory", tr: "Teori"}, {en: "Data", tr: "Veri"},
+                    {en: "Analysis", tr: "Analiz"}, {en: "Conclusion", tr: "Sonuç"}, {en: "Observation", tr: "Gözlem"}, {en: "Variable", tr: "Değişken"}, {en: "Result", tr: "Sonuç"}
+                ]
+            },
+            {
+                id: 10,
+                name: "Natural Forces",
+                words: [
+                    {en: "Earthquake", tr: "Deprem"}, {en: "Flood", tr: "Sel"}, {en: "Hurricane", tr: "Kasırga"}, {en: "Lightning", tr: "Yıldırım"}, {en: "Thunder", tr: "Gök gürültüsü"},
+                    {en: "Volcano", tr: "Volkan"}, {en: "Tornado", tr: "Fırtına"}, {en: "Weather", tr: "Hava durumu"}, {en: "Rain", tr: "Yağmur"}, {en: "Snow", tr: "Kar"},
+                    {en: "Wind", tr: "Rüzgar"}, {en: "Storm", tr: "Fırtına"}, {en: "Climate", tr: "İklim"}, {en: "Temperature", tr: "Sıcaklık"}, {en: "Season", tr: "Mevsim"},
+                    {en: "Spring", tr: "İlkbahar"}, {en: "Summer", tr: "Yaz"}, {en: "Autumn", tr: "Sonbahar"}, {en: "Winter", tr: "Kış"}, {en: "Forecast", tr: "Hava durumu tahmini"},
+                    {en: "Precipitation", tr: "Yağış"}, {en: "Humidity", tr: "Nem"}, {en: "Pressure", tr: "Basınç"}, {en: "Wind speed", tr: "Rüzgar hızı"}, {en: "Cloud", tr: "Bulut"}
+                ]
+            }
+        ];
+
+        const formulaCards = [
+            { sub: 'Matematik', title: 'Üslü Sayılar', content: '$a^n \\cdot a^m = a^{n+m}$ <br> $(a^n)^m = a^{n \\cdot m}$', icon: 'fa-superscript' },
+            { sub: 'Matematik', title: 'Pisagor Bağıntısı', content: '$a^2 + b^2 = c^2$', icon: 'fa-square-root-variable' },
+            { sub: 'Fen Bilimleri', title: 'Sıvı Basıncı', content: '$P = h \\cdot d \\cdot g$', icon: 'fa-tint' },
+            { sub: 'Fen Bilimleri', title: 'Hız Formülü', content: '$V = \frac{x}{t}$', icon: 'fa-bolt' }
+        ];
+
+        const leaderboardMock = [
+            { name: "Aslan Pençesi", score: 495.2, points: 2840, avatar: "🦁" },
+            { name: "Sınav Savaşçısı", score: 488.5, points: 2610, avatar: "⚔️" },
+            { name: "Deneme Canavarı", score: 482.1, points: 2450, avatar: "👹" },
+            { name: "LGS Şampiyonu", score: 479.4, points: 2320, avatar: "🏆" }
         ];
 
         const storeItems = [
             { id: 'theme_enerjik', name: 'Enerji Teması', price: 400, type: 'theme', value: 'enerjik', icon: '🔥' },
             { id: 'theme_odak', name: 'Odak Teması', price: 600, type: 'theme', value: 'odak', icon: '🔮' },
             { id: 'theme_orman', name: 'Doğa Teması', price: 800, type: 'theme', value: 'orman', icon: '🌿' },
-            { id: 'theme_gece', name: 'Gece Pro', price: 1200, type: 'theme', value: 'gece', icon: '🌙' },
-            { id: 'item_coffee', name: 'AI Mentor Kahvesi', price: 200, type: 'gift', value: '☕', icon: '☕' },
-            { id: 'item_pizza', name: 'Başarı Pizzası', price: 500, type: 'gift', value: '🍕', icon: '🍕' }
+            { id: 'theme_gece', name: 'Gece Pro', price: 1200, type: 'theme', value: 'gece', icon: '🌙' }
         ];
 
         const advicePool = {
-            excellent: ["Zirvedesin şampiyon! Bu disiplin seni başarıya götürür.", "Kusursuz ilerliyorsun, böyle devam.", "Harika bir çalışma disiplini örneği!"],
-            good: ["Oldukça iyisin, 1-2 kilit konuya tekrar bakarsan fullersin.", "Netlerin istikrarlı, zirveye ramak kaldı.", "Gelişimin umut verici."],
-            average: ["Temelin var ama pratik eksiğin netlerine yansıyor.", "Yanlışlarını analiz etmelisin.", "Vites artırma zamanı geldi."],
-            low: ["Pes etmek yok! Bugün yeni bir başlangıç yapıyoruz.", "Temel kavramlara dönmelisin.", "Hataların senin rehberindir."]
+            excellent: ["Zirvedesin şampiyon!", "Kusursuz ilerliyorsun."],
+            good: ["Oldukça iyisin.", "Gelişimin umut verici."],
+            average: ["Yanlışlarını analiz etmelisin.", "Vites artırma zamanı."],
+            low: ["Pes etmek yok!", "Bugün yeni bir başlangıç yapıyoruz."]
         };
 
         const coachQuickReplies = [
             { text: "Naber? 👋", q: "naber" },
             { text: "Sıkıldım 😔", q: "sıkıldım" },
-            { text: "Netlerim düşük 📈", q: "netlerim düşük" },
             { text: "Sınav ne zaman? 📅", q: "sınav ne zaman" }
+        ];
+
+        // BAŞARI RÖTETLERİ
+        const badgesPool = [
+            { id: 'first_exam', name: 'İlk Deneme', icon: '🎯', description: 'İlk denemeyi çöz', condition: (s) => s.exams.length >= 1 },
+            { id: 'perfect_score', name: 'Mükemmel', icon: '💯', description: '50 puan al', condition: (s) => s.exams.some(e => e.score >= 50) },
+            { id: 'ten_exams', name: 'Deneme Ustası', icon: '📚', description: '10 deneme çöz', condition: (s) => s.exams.length >= 10 },
+            { id: 'streak_7', name: 'Haftalık Şampiyon', icon: '🔥', description: '7 gün üst üste giriş', condition: (s) => s.user.streak >= 7 },
+            { id: 'words_100', name: 'Kelime Uzmanı', icon: '📝', description: '100 kelime çalış', condition: (s) => s.learnedWords >= 100 },
+            { id: 'points_5000', name: '5000 Puan', icon: '⭐', description: '5000 puan topla', condition: (s) => s.user.points >= 5000 },
+            { id: 'tasks_50', name: 'Görev Ustası', icon: '✅', description: '50 görev tamamla', condition: (s) => s.completedTasks >= 50 },
+            { id: 'friend_5', name: 'Rekabetçi', icon: '👥', description: '5 arkadaş ekle', condition: (s) => s.friends.length >= 5 },
+            { id: 'champion', name: 'Şampiyon', icon: '👑', description: '1. sırayı al', condition: (s) => s.user.rank === 1 }
+        ];
+
+        // GÜNCELLENMİŞ LGS KONULARI - Ders bazlı detaylı konular
+        const lgsTopicsData = [
+            {
+                subject: 'Türkçe',
+                topics: [
+                    { id: 'tur1', name: 'Sözcükte Anlam', completed: false },
+                    { id: 'tur2', name: 'Cümlede Anlam', completed: false },
+                    { id: 'tur3', name: 'Paragrafta Anlam', completed: false },
+                    { id: 'tur4', name: 'Ses Bilgisi', completed: false },
+                    { id: 'tur5', name: 'Yazım Kuralları', completed: false },
+                    { id: 'tur6', name: 'Noktalama İşaretleri', completed: false },
+                    { id: 'tur7', name: 'Fiilimsiler', completed: false },
+                    { id: 'tur8', name: 'Cümlenin Ögeleri', completed: false },
+                    { id: 'tur9', name: 'Fiilde Çatı', completed: false },
+                    { id: 'tur10', name: 'Cümle Türleri', completed: false }
+                ]
+            },
+            {
+                subject: 'Matematik',
+                topics: [
+                    { id: 'mat1', name: 'Çarpanlar ve Katlar', completed: false },
+                    { id: 'mat2', name: 'Üslü İfadeler', completed: false },
+                    { id: 'mat3', name: 'Kareköklü İfadeler', completed: false },
+                    { id: 'mat4', name: 'Veri Analizi', completed: false },
+                    { id: 'mat5', name: 'Basit Olayların Olma Olasılığı', completed: false },
+                    { id: 'mat6', name: 'Cebirsel İfadeler', completed: false },
+                    { id: 'mat7', name: 'Doğrusal Denklemler', completed: false },
+                    { id: 'mat8', name: 'Eşitsizlikler', completed: false },
+                    { id: 'mat9', name: 'Üçgenler', completed: false },
+                    { id: 'mat10', name: 'Eşlik ve Benzerlik', completed: false },
+                    { id: 'mat11', name: 'Dönüşüm Geometrisi', completed: false },
+                    { id: 'mat12', name: 'Geometrik Cisimler', completed: false }
+                ]
+            },
+            {
+                subject: 'Fen Bilimleri',
+                topics: [
+                    { id: 'fen1', name: 'Mevsimler ve İklim', completed: false },
+                    { id: 'fen2', name: 'DNA ve Genetik Kod', completed: false },
+                    { id: 'fen3', name: 'Basınç', completed: false },
+                    { id: 'fen4', name: 'Madde ve Endüstri', completed: false },
+                    { id: 'fen5', name: 'Basit Makineler', completed: false },
+                    { id: 'fen6', name: 'Enerji Dönüşümleri', completed: false },
+                    { id: 'fen7', name: 'Elektrik Yükleri', completed: false },
+                    { id: 'fen8', name: 'Canlılar ve Enerji İlişkileri', completed: false }
+                ]
+            },
+            {
+                subject: 'İnkılap Tarihi',
+                topics: [
+                    { id: 'ink1', name: 'Bir Kahraman Doğuyor', completed: false },
+                    { id: 'ink2', name: 'Milli Uyanış', completed: false },
+                    { id: 'ink3', name: 'Ya İstiklal Ya Ölüm', completed: false },
+                    { id: 'ink4', name: 'Çağdaş Türkiye Yolunda', completed: false },
+                    { id: 'ink5', name: 'Demokratikleşme Çabaları', completed: false },
+                    { id: 'ink6', name: 'Atatürk Dönemi Türk Dış Politikası', completed: false },
+                    { id: 'ink7', name: 'Atatürk\'ten Sonra Türkiye', completed: false }
+                ]
+            },
+            {
+                subject: 'Din Kültürü',
+                topics: [
+                    { id: 'din1', name: 'Kader İnancı', completed: false },
+                    { id: 'din2', name: 'Zekat ve Sadaka', completed: false },
+                    { id: 'din3', name: 'Din ve Hayat', completed: false },
+                    { id: 'din4', name: 'Hz. Muhammed\'in Örnekliği', completed: false },
+                    { id: 'din5', name: 'Kur\'an-ı Kerim ve Özellikleri', completed: false }
+                ]
+            },
+            {
+                subject: 'İngilizce',
+                topics: [
+                    { id: 'ing1', name: 'Friendship', completed: false },
+                    { id: 'ing2', name: 'Teen Life', completed: false },
+                    { id: 'ing3', name: 'In The Kitchen', completed: false },
+                    { id: 'ing4', name: 'On The Phone', completed: false },
+                    { id: 'ing5', name: 'The Internet', completed: false },
+                    { id: 'ing6', name: 'Adventures', completed: false },
+                    { id: 'ing7', name: 'Tourism', completed: false },
+                    { id: 'ing8', name: 'Chores', completed: false },
+                    { id: 'ing9', name: 'Science', completed: false },
+                    { id: 'ing10', name: 'Natural Forces', completed: false }
+                ]
+            }
         ];
 
         // --- STATE ---
         let state = {
             user: { 
-                name: "Can", points: 1250, streak: 0, lastDate: null, theme: 'sakin', adminPin: "1234", fontSize: 16, examDate: "2026-06-14", purchasedItems: ['theme_sakin'], lastVisit: "",
+                name: "Can", points: 1250, level: 1, streak: 0, lastDate: null, theme: 'sakin', adminPin: "1234", fontSize: 16, examDate: "2026-06-14", purchasedItems: ['theme_sakin'], lastVisit: "",
                 profilePic: "", targetSchool: "Fen Lisesi", targetScore: 480
             },
             todos: [],
             exams: [],
             messages: [],
+            voiceNotes: [],
             qa: [
-                { "q": "selam", "a": "Selam  ! LGS 2026 yolculuğunda yanındayım. Bugün hangi konuları fethetmeyi planlıyorsun?" },
-                { "q": "günaydın", "a": "Günaydın  ! Yeni bir gün, yeni bir şans. Enerjini topla ve bugün dünkünden daha iyi olmaya odaklan!" },
-                { "q": "başarısızlık korkusu", "a": "Onu bir motivasyon kaynağına dönüştür  ." },
-                { "q": "lgs 2026 gün sayacı", "a": "Azalıyor olması seni korkutmasın, hırslandırsın  ." },
-                { "q": "çalışırken şarkı söylemek", "a": "Daha derin odaklanmaya çalış  ." },
-                { "q": "saygı duyulan bir öğrenci olmak", "a": "Emeklerin seni o noktaya taşıyacak  ." },
-                { "q": "sınav sabahı ne yemeli", "a": "Seni zinde tutacak hafif şeyler  ." },
-                { "q": "sonuçlardan korkmak", "a": "Bugün çalışırsan sonuçlardan korkmana gerek kalmaz  ." },
-                { "q": "tatlı isteği", "a": "Beynin yakıt istiyor  , sağlıklı şekerler ver." },
-                { "q": "kaç soru var toplam", "a": "90 soru, 90 fırsat  !" },
-                { "q": "müzikli çalışma", "a": "Kendini test et, odağın bozuluyorsa kapat  ." },
-                { "q": "şampiyonluk yolu", "a": "Bugün attığın adımlarla döşeniyor  ." },
-                { "q": "dertleşmek", "a": "Ara ara yap ama dersini de aksatma  ." },
-                { "q": "teşekkürler", "a": "Ben teşekkür ederim  ! Seninle bu yolu yürümek harika. Başarılar!" }
+                { "q": "selam", "a": "Selam! LGS 2026 yolculuğunda yanındayım. Bugün ne yapıyoruz?" },
+                { "q": "günaydın", "a": "Günaydın! Yeni bir gün, yeni bir şans." }
             ],
-            englishProgress: {}
+            // GÜNCELLENMİŞ LGS KONULARI
+            lgsTopics: lgsTopicsData,
+            // BAŞARI RÖTETLERİ
+            unlockedBadges: [],
+            // KELİME ÖĞRENME
+            learnedWords: 0,
+            // ARKADAŞLIK SİSTEMİ
+            friends: [],
+            // OKUL SINAV TARIHLERİ
+            examSchedule: [],
+            // SANAL RAKİPLER
+            virtualRivals: [
+                { name: "Mert", score: 492.5, points: 2950, avatar: "👨", isVirtual: true },
+                { name: "Zeynep", score: 485.3, points: 2780, avatar: "👩", isVirtual: true },
+                { name: "Ali", score: 489.1, points: 2890, avatar: "👨", isVirtual: true },
+                { name: "Elif", score: 483.7, points: 2750, avatar: "👩", isVirtual: true },
+                { name: "Canan", score: 490.8, points: 2820, avatar: "👩", isVirtual: true },
+                { name: "Burak", score: 486.2, points: 2760, avatar: "👨", isVirtual: true }
+            ],
+            // İSTATİSTİKLER
+            completedTasks: 0,
+            completedTopics: 0
         };
 
+        let pomodoro = { timeLeft: 1500, timer: null, mode: 'work', active: false };
+        let ambientAudio = null;
+        let editingFriendId = null;
+
         const storage = {
-            save: () => { localStorage.setItem('mentor_v21_final', JSON.stringify(state)); updateDashboard(); },
+            save: () => { 
+                state.user.level = Math.floor(state.user.points / 500) + 1;
+                
+                // Tamamlanan konu sayısını hesapla
+                state.completedTopics = 0;
+                state.lgsTopics.forEach(subject => {
+                    subject.topics.forEach(topic => {
+                        if (topic.completed) state.completedTopics++;
+                    });
+                });
+                
+                localStorage.setItem('mentor_v21_plus', JSON.stringify(state)); 
+                updateDashboard(); 
+            },
             load: () => {
-                const s = localStorage.getItem('mentor_v21_final');
+                const s = localStorage.getItem('mentor_v21_plus');
                 if (s) {
                     const saved = JSON.parse(s);
+                    
+                    // Eski veri yapısını yeni yapıya dönüştür
+                    if (saved.lgsTopics && !Array.isArray(saved.lgsTopics[0]?.topics)) {
+                        saved.lgsTopics = lgsTopicsData;
+                    }
+                    
                     state = { ...state, ...saved, user: { ...state.user, ...saved.user } };
                 }
                 document.body.className = "theme-" + state.user.theme;
                 document.documentElement.style.setProperty('--base-text-size', state.user.fontSize + 'px');
                 checkDailyTasks();
+                checkBadges();
             }
         };
 
@@ -212,6 +495,15 @@
                 state.user.lastVisit = today;
                 storage.save();
             }
+        }
+
+        function checkBadges() {
+            state.unlockedBadges = state.unlockedBadges.filter(b => badgesPool.find(poolB => poolB.id === b));
+            badgesPool.forEach(badge => {
+                if (!state.unlockedBadges.includes(badge.id) && badge.condition(state)) {
+                    state.unlockedBadges.push(badge.id);
+                }
+            });
         }
 
         const utils = {
@@ -229,6 +521,20 @@
             getRandomAdvice: (perc) => {
                 let pool = perc >= 85 ? advicePool.excellent : perc >= 65 ? advicePool.good : perc >= 40 ? advicePool.average : advicePool.low;
                 return pool[Math.floor(Math.random() * pool.length)];
+            },
+            // Konu tamamlanma yüzdesini hesapla
+            getTopicCompletionPercentage: () => {
+                let totalTopics = 0;
+                let completedTopics = 0;
+                
+                state.lgsTopics.forEach(subject => {
+                    subject.topics.forEach(topic => {
+                        totalTopics++;
+                        if (topic.completed) completedTopics++;
+                    });
+                });
+                
+                return totalTopics > 0 ? Math.round((completedTopics / totalTopics) * 100) : 0;
             }
         };
 
@@ -259,8 +565,13 @@
                     case 'tasks': this.renderTasks(c); break;
                     case 'reports': this.renderReports(c); break;
                     case 'english': this.renderEnglish(c); break;
+                    case 'topics': this.renderTopics(c); break;
+                    case 'badges': this.renderBadges(c); break;
+                    case 'friends': this.renderFriends(c); break;
+                    case 'examschedule': this.renderExamSchedule(c); break;
                     case 'store': this.renderStore(c); break;
                     case 'settings': this.renderSettings(c); break;
+                    case 'formulas': this.renderFormulas(c); break;
                 }
                 m.appendChild(c);
             },
@@ -269,69 +580,82 @@
                 const avg = utils.getAverageScore();
                 const target = state.user.targetScore || 500;
                 const progress = Math.min(100, (avg / target) * 100).toFixed(0);
+                const topicProgress = utils.getTopicCompletionPercentage();
 
                 c.innerHTML = `
-                    <!-- Hedef Kartı -->
                     <div class="glass-card p-6 rounded-[2.5rem] border-l-8 border-primary shadow-lg overflow-hidden relative">
                         <div class="flex justify-between items-start mb-4">
-                            <div>
-                                <h3 class="text-[10px] font-black text-primary uppercase tracking-widest">HEDEF LİSE</h3>
-                                <p class="text-xl font-black text-gray-800">${state.user.targetSchool}</p>
-                            </div>
-                            <div class="text-right">
-                                <p class="text-xs font-bold text-gray-400">Hedef: ${target}</p>
-                                <p class="text-xs font-bold text-gray-400">Ortalama: ${avg}</p>
-                            </div>
+                            <div><h3 class="text-[10px] font-black text-primary uppercase">HEDEF LİSE</h3><p class="text-xl font-black text-gray-800">${state.user.targetSchool}</p></div>
+                            <div class="text-right"><p class="text-xs font-bold text-gray-400">Hedef: ${target}</p></div>
                         </div>
                         <div class="w-full h-4 bg-gray-100 rounded-full overflow-hidden mb-2">
-                            <div class="h-full bg-primary progress-bar shadow-sm" style="width: ${progress}%"></div>
+                            <div class="h-full bg-primary progress-bar" style="width: ${progress}%"></div>
                         </div>
-                        <div class="flex justify-between items-center">
-                            <span class="text-[10px] font-bold text-gray-400 uppercase">Gelişim Oranı</span>
-                            <span class="text-xs font-black text-primary">%${progress}</span>
-                        </div>
-                        <i class="fas fa-graduation-cap absolute -bottom-4 -right-4 text-primary/10 text-7xl"></i>
+                        <div class="flex justify-between items-center"><span class="text-[10px] font-bold text-gray-400 uppercase">Gelişim %${progress}</span><span class="text-xs font-black text-primary">${avg} Net</span></div>
                     </div>
 
-                    <!-- Geri Sayım -->
-                    <div class="glass-card p-6 rounded-[2.5rem] bg-gradient-to-br from-indigo-600 to-indigo-900 text-white border-none shadow-xl">
+                    <!-- Konu İlerleme -->
+                    <div class="glass-card p-5 rounded-3xl border-t-4 border-green-500">
+                        <div class="flex justify-between items-center mb-3">
+                            <h3 class="text-xs font-black uppercase text-green-600">Konu İlerleme</h3>
+                            <span class="text-lg font-black text-green-600">${topicProgress}%</span>
+                        </div>
+                        <div class="w-full h-3 bg-gray-100 rounded-full overflow-hidden">
+                            <div class="h-full bg-green-500 progress-bar" style="width: ${topicProgress}%"></div>
+                        </div>
+                        <div class="flex justify-between items-center mt-2">
+                            <span class="text-[9px] font-bold text-gray-500">${state.completedTopics} konu tamamlandı</span>
+                            <span class="text-[9px] font-bold text-green-600">${topicProgress}% tamamlandı</span>
+                        </div>
+                    </div>
+
+                    <!-- Hızlı Erişim Özellikleri -->
+                    <div class="grid grid-cols-3 gap-3">
+                        <div onclick="openPomodoro()" class="glass-card p-4 rounded-3xl text-center touch-feedback">
+                            <div class="w-10 h-10 bg-red-100 text-red-600 rounded-2xl mx-auto flex items-center justify-center mb-2"><i class="fas fa-clock text-lg"></i></div>
+                            <span class="text-[8px] font-black uppercase">ODAK</span>
+                        </div>
+                        <div onclick="router.navigate('formulas')" class="glass-card p-4 rounded-3xl text-center touch-feedback">
+                            <div class="w-10 h-10 bg-blue-100 text-blue-600 rounded-2xl mx-auto flex items-center justify-center mb-2"><i class="fas fa-file-invoice text-lg"></i></div>
+                            <span class="text-[8px] font-black uppercase">FORMÜL</span>
+                        </div>
+                        <div onclick="openVoiceNotes()" class="glass-card p-4 rounded-3xl text-center touch-feedback">
+                            <div class="w-10 h-10 bg-green-100 text-green-600 rounded-2xl mx-auto flex items-center justify-center mb-2"><i class="fas fa-microphone-alt text-lg"></i></div>
+                            <span class="text-[8px] font-bold uppercase">SESLİ NOT</span>
+                        </div>
+                    </div>
+
+                    <div class="glass-card p-6 rounded-[2.5rem] bg-gradient-to-br from-indigo-600 to-indigo-900 text-white shadow-xl">
                         <h2 class="text-xs font-black uppercase opacity-60">LGS 2026 Geri Sayım</h2>
-                        <div class="flex items-baseline gap-2 mt-2">
-                            <span class="text-5xl font-black">${utils.getDaysLeft()}</span>
-                            <span class="text-lg font-bold opacity-80 uppercase">Gün Kaldı</span>
-                        </div>
+                        <div class="flex items-baseline gap-2 mt-2"><span class="text-5xl font-black">${utils.getDaysLeft()}</span><span class="text-lg font-bold opacity-80 uppercase">Gün</span></div>
                     </div>
 
-                    <!-- Market -->
+                    <!-- Bekleyen Görevler -->
                     <div class="space-y-3">
-                         <div class="flex justify-between items-center px-1">
-                            <h3 class="text-xs font-black uppercase text-gray-400">Markette Bugün</h3>
-                            <button onclick="router.navigate('store')" class="text-[9px] font-black text-primary uppercase">Hepsi</button>
-                         </div>
-                         <div class="flex gap-3 overflow-x-auto pb-2 hide-scrollbar">
-                            ${storeItems.map(item => `
-                                <div class="glass-card min-w-[120px] p-4 rounded-3xl text-center shadow-sm">
-                                    <div class="text-3xl mb-1">${item.icon}</div>
-                                    <p class="text-[8px] font-black uppercase mb-2 truncate text-gray-600">${item.name}</p>
-                                    <button onclick="buyItem('${item.id}')" class="bg-primary text-white text-[8px] font-black px-3 py-1.5 rounded-full uppercase shadow-sm active:scale-95 transition-all">${item.price} P.</button>
-                                </div>
-                            `).join('')}
-                         </div>
-                    </div>
-
-                    <!-- Tüm Görevler Listesi (Active) -->
-                    <div class="space-y-3">
-                         <div class="flex justify-between items-center px-1">
-                            <h3 class="text-xs font-black uppercase text-gray-400">Bekleyen Görevler</h3>
-                            <button onclick="router.navigate('tasks')" class="text-[9px] font-black text-primary uppercase">Yönet</button>
-                         </div>
-                         ${active.length === 0 ? '<p class="text-xs text-gray-400 italic text-center p-4">Tebrikler! Bekleyen görevin yok.</p>' : 
+                         <div class="flex justify-between items-center px-1"><h3 class="text-xs font-black uppercase text-gray-400">Bekleyen Görevler</h3></div>
+                         ${active.length === 0 ? '<p class="text-xs text-gray-400 italic text-center p-4 text-gray-500">Görev kalmadı!</p>' : 
                          active.map(t => `
                             <div class="glass-card p-4 rounded-2xl flex justify-between items-center border-l-4 border-primary shadow-sm mb-2">
                                 <span class="text-xs font-bold text-gray-700">${utils.escape(t.text)}</span>
-                                <button onclick="toggleTodo(${t.id})" class="w-6 h-6 border-2 border-primary rounded-lg transition-all active:scale-90 shadow-sm"></button>
+                                <button onclick="toggleTodo(${t.id})" class="w-6 h-6 border-2 border-primary rounded-lg active:scale-90 shadow-sm"></button>
                             </div>
-                         `).join('')}
+                        `).join('')}
+                    </div>
+                `;
+            },
+            renderFormulas(c) {
+                c.innerHTML = `
+                    <div class="flex items-center gap-4 mb-4"><button onclick="router.navigate('home')" class="text-primary"><i class="fas fa-arrow-left"></i></button><h2 class="text-xl font-black uppercase">Bilgi Kartları</h2></div>
+                    <div class="grid grid-cols-1 gap-4">
+                        ${formulaCards.map(f => `
+                            <div class="glass-card p-5 rounded-3xl border-t-4 border-primary">
+                                <div class="flex items-center gap-3 mb-3">
+                                    <div class="w-8 h-8 bg-indigo-50 text-primary rounded-xl flex items-center justify-center"><i class="fas ${f.icon}"></i></div>
+                                    <div><p class="text-[9px] font-black text-gray-400 uppercase">${f.sub}</p><p class="text-xs font-black text-gray-800">${f.title}</p></div>
+                                </div>
+                                <div class="bg-gray-50 p-4 rounded-2xl text-center text-sm font-bold text-gray-700">${f.content}</div>
+                            </div>
+                        `).join('')}
                     </div>
                 `;
             },
@@ -371,28 +695,806 @@
                 const active = state.todos.filter(t => !t.completed);
                 const completed = state.todos.filter(t => t.completed);
                 c.innerHTML = `
-                    <div class="glass-card p-6 rounded-3xl mb-4 border-b-4 border-primary/20"><h3 class="text-xs font-black uppercase text-gray-400 mb-3 tracking-widest">Yeni Görev</h3><div class="flex gap-2"><input type="text" id="task-input" placeholder="Örn: 50 Matematik sorusu..." class="flex-1 bg-gray-50 p-4 rounded-2xl text-xs font-bold outline-none border-none"><button onclick="addTask()" class="bg-primary text-white w-14 rounded-2xl flex items-center justify-center shadow-lg active:scale-90"><i class="fas fa-plus"></i></button></div></div>
-                    <div class="space-y-6"><section><h4 class="text-[10px] font-black uppercase text-indigo-400 mb-3 px-1 tracking-widest">Bekleyenler</h4><div class="space-y-2">${active.map(t => `<div class="glass-card p-4 rounded-2xl flex items-center justify-between border-l-4 border-primary group shadow-sm transition-all"><div class="flex items-center gap-3"><button onclick="toggleTodo(${t.id})" class="w-6 h-6 border-2 border-primary rounded-lg"></button><span class="text-xs font-bold text-gray-700">${utils.escape(t.text)}</span></div><div class="flex gap-2"><button onclick="editTask(${t.id})" class="text-gray-300 hover:text-indigo-500"><i class="fas fa-edit"></i></button><button onclick="deleteTask(${t.id})" class="text-red-200 hover:text-red-500"><i class="fas fa-trash"></i></button></div></div>`).join('')}</div></section><section><h4 class="text-[10px] font-black uppercase text-green-400 mb-3 px-1 tracking-widest">Tamamlananlar</h4><div class="space-y-2 opacity-60">${completed.map(t => `<div class="glass-card p-4 rounded-2xl flex items-center justify-between border-l-4 border-green-500"><div class="flex items-center gap-3"><button onclick="toggleTodo(${t.id})" class="w-6 h-6 bg-green-500 text-white rounded-lg flex items-center justify-center shadow-sm"><i class="fas fa-undo text-[8px]"></i></button><span class="text-xs font-bold text-gray-400 line-through">${utils.escape(t.text)}</span></div><button onclick="deleteTask(${t.id})" class="text-red-300"><i class="fas fa-trash text-sm"></i></button></div>`).join('')}</div></section></div>
+                    <div class="glass-card p-6 rounded-3xl mb-4 border-b-4 border-primary/20"><h3 class="text-xs font-black uppercase text-gray-400 mb-3 tracking-widest">Yeni Görev</h3><div class="flex gap-2"><input type="text" id="task-input" placeholder="Örn: 50 Matematik sorusu..." class="flex-1 bg-gray-50 p-4 rounded-2xl text-xs font-bold outline-none border-none"><button onclick="addTask()" class="bg-primary text-white w-14 rounded-2xl flex items-center justify-center shadow-lg active:scale-95"><i class="fas fa-plus"></i></button></div></div>
+                    <div class="space-y-6"><section><h4 class="text-[10px] font-black uppercase text-indigo-400 mb-3 px-1 tracking-widest">Bekleyenler</h4><div class="space-y-2">${active.map(t => `<div class="glass-card p-4 rounded-2xl flex items-center justify-between border-l-4 border-primary group shadow-sm transition-all"><div class="flex items-center gap-3"><button onclick="toggleTodo(${t.id})" class="w-6 h-6 border-2 border-primary rounded-lg"></button><span class="text-xs font-bold text-gray-700">${utils.escape(t.text)}</span></div><div class="flex gap-2"><button onclick="editTask(${t.id})" class="text-gray-300 hover:text-indigo-500"><i class="fas fa-edit"></i></button><button onclick="deleteTask(${t.id})" class="text-red-200 hover:text-red-500"><i class="fas fa-trash"></i></button></div></div>`).join('')}</div></section></div>
                 `;
             },
             renderReports(c) {
-                c.innerHTML = `<h2 class="text-lg font-black uppercase tracking-tighter">Başarı Karnesi</h2><div class="glass-card p-5 rounded-[2.5rem] shadow-sm mb-4"><p class="text-[10px] font-black text-gray-400 mb-4 uppercase tracking-widest">Puan Gelişim Grafiği</p><canvas id="mainChart" class="w-full h-48"></canvas></div><div class="glass-card p-5 rounded-[2.5rem] shadow-sm"><p class="text-[10px] font-black text-gray-400 mb-4 uppercase tracking-widest">Branş Analizi (Ortalama Net)</p><canvas id="subjectChart" class="w-full h-48"></canvas></div>`;
+                c.innerHTML = `
+                    <h2 class="text-lg font-black uppercase tracking-tighter">Haftalık Sıralama</h2>
+                    <div class="glass-card p-5 rounded-[2.5rem] shadow-sm space-y-4 mb-6">
+                        ${leaderboardMock.map((u, i) => `
+                            <div class="flex items-center justify-between p-3 ${i===0 ? 'bg-indigo-50' : ''} rounded-2xl">
+                                <div class="flex items-center gap-3">
+                                    <span class="text-sm font-black text-gray-400">#${i+1}</span>
+                                    <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center text-xl shadow-sm">${u.avatar}</div>
+                                    <div><p class="text-xs font-black text-gray-700">${u.name}</p><p class="text-[8px] font-bold text-gray-400">${u.points} Puan</p></div>
+                                </div>
+                                <div class="text-right text-xs font-black text-primary">${u.score}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <h2 class="text-lg font-black uppercase tracking-tighter">Başarı Sıralaması</h2>
+                    <div class="glass-card p-5 rounded-[2.5rem] shadow-sm mb-4">
+                        <div class="space-y-4">
+                            ${state.virtualRivals.map((rival, i) => `
+                                <div class="flex items-center justify-between p-3 rounded-2xl">
+                                    <div class="flex items-center gap-3">
+                                        <span class="text-sm font-black text-gray-400">#${i+1}</span>
+                                        <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center text-xl shadow-sm">${rival.avatar}</div>
+                                        <div><p class="text-xs font-black text-gray-700">${rival.name}</p><p class="text-[8px] font-bold text-indigo-400">${rival.points} Puan</p></div>
+                                    </div>
+                                    <div class="text-right text-xs font-black text-primary">${rival.score}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    <h2 class="text-lg font-black uppercase tracking-tighter">Analiz</h2>
+                    <div class="glass-card p-5 rounded-[2.5rem] shadow-sm mb-4"><canvas id="mainChart" class="w-full h-48"></canvas></div>
+                `;
                 setTimeout(() => initCharts(), 100);
             },
             renderEnglish(c) {
-                c.innerHTML = `<h2 class="text-xl font-black uppercase mb-4 text-cyan-600">İngilizce Maratonu</h2><div class="grid grid-cols-1 gap-3">${englishUnits.map(u => `<div class="glass-card p-5 rounded-3xl flex justify-between items-center touch-feedback transition hover:border-cyan-200" onclick="openFlashcards(${u.id})"><div class="flex items-center gap-4"><div class="w-12 h-12 bg-cyan-50 text-cyan-600 rounded-2xl flex items-center justify-center font-black shadow-inner">${u.id}</div><p class="text-xs font-black text-gray-700 uppercase">${u.name}</p></div><i class="fas fa-chevron-right text-gray-200"></i></div>`).join('')}</div>`;
+                c.innerHTML = `<h2 class="text-xl font-black uppercase mb-4 text-cyan-600">Kelime Maratonu</h2><div class="grid grid-cols-1 gap-3">${englishUnits.map(u => `<div class="glass-card p-5 rounded-3xl flex justify-between items-center touch-feedback transition hover:border-cyan-200" onclick="openFlashcards(${u.id})"><div class="flex items-center gap-4"><div class="w-12 h-12 bg-cyan-50 text-cyan-600 rounded-2xl flex items-center justify-center font-black shadow-inner">${u.id}</div><p class="text-xs font-black text-gray-700 uppercase">${u.name}</p></div><i class="fas fa-chevron-right text-gray-200"></i></div>`).join('')}</div>`;
+            },
+            renderTopics(c) {
+                const totalTopics = state.lgsTopics.reduce((sum, subject) => sum + subject.topics.length, 0);
+                const completedTopics = state.completedTopics;
+                const completionPercentage = utils.getTopicCompletionPercentage();
+                
+                c.innerHTML = `
+                    <div class="flex justify-between items-center mb-4">
+                        <div>
+                            <h2 class="text-xl font-black uppercase text-green-600">LGS Konuları</h2>
+                            <p class="text-[10px] text-gray-500">${completedTopics}/${totalTopics} konu tamamlandı (%${completionPercentage})</p>
+                        </div>
+                        <button onclick="openTopicManager()" class="bg-green-500 text-white px-4 py-2 rounded-xl text-[10px] font-black shadow-lg uppercase active:scale-95 transition-all">Yönet</button>
+                    </div>
+                    
+                    <div class="space-y-6">
+                        ${state.lgsTopics.map(subject => {
+                            const subjectCompleted = subject.topics.filter(t => t.completed).length;
+                            const subjectTotal = subject.topics.length;
+                            const subjectPercentage = subjectTotal > 0 ? Math.round((subjectCompleted / subjectTotal) * 100) : 0;
+                            
+                            return `
+                                <div class="glass-card p-5 rounded-3xl">
+                                    <div class="flex justify-between items-center mb-4">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-10 h-10 ${subjectPercentage === 100 ? 'bg-green-100 text-green-600' : 'bg-indigo-100 text-indigo-600'} rounded-xl flex items-center justify-center font-black">
+                                                ${subjectPercentage === 100 ? '✓' : subject.subject.charAt(0)}
+                                            </div>
+                                            <div>
+                                                <h3 class="text-sm font-black text-gray-800">${subject.subject}</h3>
+                                                <p class="text-[9px] text-gray-500">${subjectCompleted}/${subjectTotal} konu</p>
+                                            </div>
+                                        </div>
+                                        <span class="text-xs font-black ${subjectPercentage === 100 ? 'text-green-600' : 'text-indigo-600'}">%${subjectPercentage}</span>
+                                    </div>
+                                    
+                                    <div class="space-y-2">
+                                        ${subject.topics.map(topic => `
+                                            <div class="topic-item ${topic.completed ? 'completed' : 'selected'} glass-card p-3 rounded-2xl flex items-center justify-between" onclick="toggleTopic('${subject.subject}', '${topic.id}')">
+                                                <div class="flex items-center gap-3">
+                                                    <div class="topic-badge ${topic.completed ? 'completed' : 'pending'}">
+                                                        ${topic.completed ? '✓' : '○'}
+                                                    </div>
+                                                    <span class="topic-text text-xs font-bold ${topic.completed ? 'text-green-600' : 'text-gray-700'}">${topic.name}</span>
+                                                </div>
+                                                ${topic.completed ? 
+                                                    '<span class="text-[9px] text-green-600 font-black">TAMAMLANDI</span>' : 
+                                                    '<span class="text-[9px] text-indigo-600 font-black">TAMAMLA</span>'
+                                                }
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                `;
+            },
+            renderBadges(c) {
+                c.innerHTML = `
+                    <h2 class="text-xl font-black uppercase mb-4 text-yellow-600">Başarı Rozetleri & Kupalar</h2>
+                    <div class="grid grid-cols-3 gap-4">
+                        ${badgesPool.map(badge => {
+                            const unlocked = state.unlockedBadges.includes(badge.id);
+                            return `
+                                <div class="glass-card p-4 rounded-2xl text-center ${unlocked ? '' : 'opacity-50'}">
+                                    <div class="badge mx-auto mb-2 ${unlocked ? '' : 'locked'}" style="background: ${unlocked ? 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)' : '#e5e7eb'}">
+                                        ${unlocked ? badge.icon : '🔒'}
+                                    </div>
+                                    <p class="text-[10px] font-black uppercase text-gray-700">${badge.name}</p>
+                                    <p class="text-[8px] text-gray-500">${badge.description}</p>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                `;
+            },
+            renderFriends(c) {
+                c.innerHTML = `
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-black uppercase text-blue-600">Arkadaşlık & Rekabet Sistemi</h2>
+                        <button onclick="openAddFriend()" class="bg-blue-500 text-white px-4 py-2 rounded-xl text-[10px] font-black shadow-lg uppercase active:scale-95 transition-all">+ Ekle</button>
+                    </div>
+                    
+                    <div class="glass-card p-5 rounded-[2.5rem] shadow-sm mb-6">
+                        <h3 class="text-xs font-black uppercase text-gray-400 mb-4">Arkadaşlarım</h3>
+                        <div class="space-y-3">
+                            ${state.friends.length === 0 ? '<p class="text-center text-gray-400 text-xs italic">Henüz arkadaş eklemedin.</p>' : 
+                            state.friends.map(friend => `
+                                <div class="flex items-center justify-between p-3 bg-white rounded-2xl border border-gray-100">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-xl shadow-sm">${friend.avatar}</div>
+                                        <div>
+                                            <p class="text-xs font-black text-gray-700">${friend.name}</p>
+                                            <p class="text-[8px] font-bold text-gray-400">${friend.points} Puan</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-xs font-black text-primary">${friend.score} Net</span>
+                                        <button onclick="openEditFriendModal('${friend.id}')" class="text-blue-400 hover:text-blue-600 px-2">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button onclick="removeFriend('${friend.id}')" class="text-red-400 hover:text-red-600">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+
+                    <div class="glass-card p-5 rounded-[2.5rem] shadow-sm mb-6">
+                        <h3 class="text-xs font-black uppercase text-gray-400 mb-4">Sanal Rakipler</h3>
+                        <div class="space-y-3">
+                            ${state.virtualRivals.map(rival => `
+                                <div class="flex items-center justify-between p-3 bg-indigo-50 rounded-2xl border border-indigo-100">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center text-xl shadow-sm">${rival.avatar}</div>
+                                        <div>
+                                            <p class="text-xs font-black text-gray-700">${rival.name}</p>
+                                            <p class="text-[8px] font-bold text-indigo-400">${rival.points} Puan</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-xs font-black text-indigo-600">${rival.score} Net</span>
+                                        <i class="fas fa-robot text-indigo-300"></i>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+
+                    <div class="glass-card p-5 rounded-[2.5rem] shadow-sm">
+                        <h3 class="text-xs font-black uppercase text-gray-400 mb-4">Rekabet Durumu</h3>
+                        <div class="space-y-4">
+                            ${state.friends.length > 0 ? `
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs font-bold text-gray-600">Arkadaşlarımın Sıralaması:</span>
+                                    <span class="text-xs font-black text-primary">Toplam ${state.friends.length} kişi</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs font-bold text-gray-600">Sınav Ortalaması:</span>
+                                    <span class="text-xs font-black text-primary">${utils.getAverageScore()}</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs font-bold text-gray-600">Toplam Puan:</span>
+                                    <span class="text-xs font-black text-primary">${state.user.points}</span>
+                                </div>
+                            ` : '<p class="text-center text-gray-400 text-xs italic">Arkadaş ekleerek rekabet başlat!</p>'}
+                        </div>
+                    </div>
+                `;
+            },
+            renderExamSchedule(c) {
+                c.innerHTML = `
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-black uppercase text-purple-600">Okul Sınav Tarihleri</h2>
+                        <button onclick="openExamScheduleModal()" class="bg-purple-500 text-white px-4 py-2 rounded-xl text-[10px] font-black shadow-lg uppercase active:scale-95 transition-all">+ Yeni Tarih</button>
+                    </div>
+
+                    <div class="glass-card p-5 rounded-[2.5rem] shadow-sm">
+                        ${state.examSchedule.length === 0 ? '<p class="text-center text-gray-400 text-xs italic">Henüz sınav tarihi yok.</p>' : 
+                        state.examSchedule.map((exam, idx) => `
+                            <div class="exam-card glass-card p-4 rounded-2xl mb-3 flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center font-black">
+                                        ${exam.subject}
+                                    </div>
+                                    <div>
+                                        <p class="text-xs font-black text-gray-700">${exam.name}</p>
+                                        <p class="text-[8px] text-gray-400 font-bold uppercase">${exam.date}</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <button onclick="editExamSchedule(${idx})" class="text-indigo-500 hover:text-indigo-700"><i class="fas fa-edit"></i></button>
+                                    <button onclick="deleteExamSchedule(${idx})" class="text-red-400 hover:text-red-600"><i class="fas fa-trash"></i></button>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+
+                    <div class="glass-card p-5 rounded-[2.5rem] shadow-sm mt-6">
+                        <h3 class="text-xs font-black uppercase text-gray-400 mb-3">Anasayfada Görüntülenen Tarihler</h3>
+                        <div class="space-y-2">
+                            ${state.examSchedule.slice(0, 3).map(exam => `
+                                <div class="flex items-center gap-2 text-xs">
+                                    <span class="bg-purple-100 text-purple-600 px-2 py-1 rounded-lg font-bold">${exam.subject}</span>
+                                    <span class="text-gray-600">${exam.date}</span>
+                                </div>
+                            `).join('')}
+                            ${state.examSchedule.length === 0 ? '<p class="text-xs text-gray-400 italic">Henüz tarih eklenmedi.</p>' : ''}
+                        </div>
+                    </div>
+                `;
             },
             renderStore(c) {
-                c.innerHTML = `<div class="bg-gradient-to-r from-yellow-400 to-orange-500 p-8 rounded-[3rem] text-white shadow-xl text-center mb-8 relative overflow-hidden"><p class="text-[11px] font-black uppercase opacity-70 tracking-widest">Harcanabilir Puanın</p><h3 class="text-6xl font-black">${state.user.points}</h3><i class="fas fa-coins absolute -bottom-4 -left-4 text-white/10 text-9xl"></i></div><div class="grid grid-cols-2 gap-4 pb-12">${storeItems.map(item => `<div class="glass-card p-6 rounded-[2rem] text-center flex flex-col items-center shadow-sm"><div class="text-5xl mb-3">${item.icon}</div><p class="text-[10px] font-black uppercase text-gray-700 mb-4 tracking-tighter">${item.name}</p><button onclick="buyItem('${item.id}')" ${state.user.purchasedItems?.includes(item.id) ? 'disabled' : ''} class="w-full py-3 rounded-2xl text-[10px] font-black uppercase shadow-sm active:scale-95 ${state.user.purchasedItems?.includes(item.id) ? 'bg-gray-100 text-gray-400' : 'bg-primary text-white shadow-indigo-100'}">${state.user.purchasedItems?.includes(item.id) ? 'SAHİPSİN' : item.price + ' Puan'}</button></div>`).join('')}</div>`;
+                c.innerHTML = `<div class="bg-gradient-to-r from-yellow-400 to-orange-500 p-8 rounded-[3rem] text-white shadow-xl text-center mb-8 relative overflow-hidden"><p class="text-[11px] font-black uppercase opacity-70 tracking-widest">Puanın</p><h3 class="text-6xl font-black">${state.user.points}</h3><i class="fas fa-coins absolute -bottom-4 -left-4 text-white/10 text-9xl"></i></div><div class="grid grid-cols-2 gap-4 pb-12">${storeItems.map(item => `<div class="glass-card p-6 rounded-[2rem] text-center flex flex-col items-center shadow-sm"><div class="text-5xl mb-3">${item.icon}</div><p class="text-[10px] font-black uppercase text-gray-700 mb-4">${item.name}</p><button onclick="buyItem('${item.id}')" ${state.user.purchasedItems?.includes(item.id) ? 'disabled' : ''} class="w-full py-3 rounded-2xl text-[10px] font-black uppercase shadow-sm active:scale-95 ${state.user.purchasedItems?.includes(item.id) ? 'bg-gray-100 text-gray-400' : 'bg-primary text-white'}">${state.user.purchasedItems?.includes(item.id) ? 'SAHİPSİN' : item.price + ' Puan'}</button></div>`).join('')}</div>`;
             },
             renderSettings(c) {
                 c.innerHTML = `
+                    <div class="glass-card p-6 rounded-[2.5rem] mb-6 shadow-md border border-primary/10">
+                        <h3 class="text-sm font-black uppercase mb-4 text-primary"><i class="fas fa-music"></i> Ortam Sesleri</h3>
+                        <div class="grid grid-cols-2 gap-3">
+                            <button onclick="playAmbient('nature')" class="p-4 bg-green-50 rounded-2xl text-[10px] font-black uppercase text-green-700 active:scale-95">🌿 DOĞA</button>
+                            <button onclick="playAmbient('lofi')" class="p-4 bg-indigo-50 rounded-2xl text-[10px] font-black uppercase text-indigo-700 active:scale-95">🎧 LO-FI</button>
+                            <button onclick="stopAmbient()" class="col-span-2 p-3 bg-red-50 rounded-2xl text-[10px] font-black uppercase text-red-700">SESİ DURDUR</button>
+                        </div>
+                    </div>
                     <div class="glass-card p-6 rounded-[2.5rem] mb-6 shadow-md border border-primary/10"><h3 class="text-sm font-black uppercase mb-6 text-primary flex items-center gap-2"><i class="fas fa-user-circle"></i> Profil Ayarları</h3><div class="space-y-5"><div class="flex flex-col items-center gap-4 mb-2"><div id="prof-preview" class="w-28 h-28 bg-gray-100 rounded-full flex items-center justify-center overflow-hidden border-4 border-white shadow-xl">${state.user.profilePic ? `<img src="${state.user.profilePic}" class="w-full h-full object-cover">` : '<i class="fas fa-user text-4xl text-gray-300"></i>'}</div><label class="bg-indigo-600 text-white px-6 py-2.5 rounded-2xl text-[10px] font-black uppercase cursor-pointer touch-feedback shadow-lg active:scale-95 transition-all"><i class="fas fa-camera mr-1"></i> Fotoğraf Seç<input type="file" id="prof-file" class="hidden" accept="image/*" onchange="handleProfilePic(this)"></label></div><div class="space-y-1"><label class="text-[9px] font-black text-gray-400 uppercase ml-2">Ad Soyad</label><input type="text" id="prof-name" placeholder="İsim" value="${state.user.name}" class="w-full p-4 bg-gray-50 rounded-2xl text-xs font-bold outline-none"></div><div class="space-y-1"><label class="text-[9px] font-black text-gray-400 uppercase ml-2">Hedef Lise Adı</label><input type="text" id="prof-school" placeholder="Hedef Lise" value="${state.user.targetSchool}" class="w-full p-4 bg-gray-50 rounded-2xl text-xs font-bold outline-none"></div><div class="space-y-1"><label class="text-[9px] font-black text-gray-400 uppercase ml-2">LGS Puan Hedefi</label><input type="number" id="prof-score" placeholder="Hedef Puan" value="${state.user.targetScore}" class="w-full p-4 bg-gray-50 rounded-2xl text-xs font-bold outline-none"></div><button onclick="updateProfile()" class="w-full bg-primary text-white py-4 rounded-2xl font-black uppercase text-xs shadow-xl active:scale-95">KAYDET</button></div></div>
                     <div class="glass-card p-6 rounded-3xl text-center shadow-md"><h3 class="text-[10px] font-black uppercase text-gray-400 mb-4 tracking-widest">Yönetici Girişi</h3><input type="password" id="pin-in" placeholder="****" class="w-full text-center text-4xl p-5 mt-2 bg-gray-50 rounded-2xl outline-none font-black tracking-[0.5em]" maxlength="4"><button onclick="checkAdmin()" class="w-full bg-gray-800 text-white py-5 mt-4 rounded-2xl font-black uppercase text-xs shadow-xl active:scale-95">PANELİ AÇ</button></div>
                     <div id="admin-panel" class="hidden space-y-4 pt-4"><div class="glass-card p-6 rounded-3xl"><h4 class="text-xs font-black uppercase mb-3 text-red-500">Sınav Takvimi</h4><input type="date" id="exam-date-in" value="${state.user.examDate}" class="w-full p-4 bg-gray-50 rounded-xl mb-3 font-bold border-none outline-none"><button onclick="updateExamDate()" class="w-full bg-indigo-600 text-white py-3 rounded-xl text-[10px] font-black uppercase">GÜNCELLE</button></div><div class="glass-card p-6 rounded-3xl"><div class="flex justify-between items-center mb-3"><h4 class="text-xs font-black uppercase text-red-500">AI Soru Yönetimi</h4><div class="flex gap-2"><button onclick="exportQA()" class="bg-blue-600 text-white p-2 rounded-lg text-[8px] font-black uppercase shadow-sm">QA İNDİR</button><label class="bg-blue-600 text-white p-2 rounded-lg text-[8px] font-black uppercase shadow-sm cursor-pointer">QA YÜKLE <input type="file" class="hidden" onchange="importQA(this)"></label></div></div><div class="space-y-2 max-h-40 overflow-y-auto mb-4 hide-scrollbar">${state.qa.map((item, idx) => `<div class="flex justify-between items-center p-3 bg-gray-50 rounded-xl text-[10px] border border-gray-100"><span class="font-bold truncate pr-4 text-gray-600">${item.q}</span><button onclick="deleteQA(${idx})" class="text-red-500 hover:scale-110 transition-all"><i class="fas fa-trash"></i></button></div>`).join('')}</div><div class="space-y-2"><input type="text" id="new-q" placeholder="Soru..." class="w-full p-4 bg-gray-50 rounded-2xl text-xs font-bold outline-none"><textarea id="new-a" placeholder="Cevap..." class="w-full p-4 bg-gray-50 rounded-2xl text-xs font-bold outline-none"></textarea><button onclick="addQA()" class="w-full bg-green-500 text-white py-4 rounded-2xl font-black uppercase shadow-lg">LİSTEYE EKLE</button></div></div><div class="glass-card p-6 rounded-3xl"><h4 class="text-xs font-black uppercase mb-3 text-gray-400">Veri Transferi</h4><div class="grid grid-cols-2 gap-2"><button onclick="exportData()" class="bg-gray-800 text-white py-3 rounded-xl text-[9px] font-black">SİSTEM YEDEK</button><label class="bg-indigo-600 text-white py-3 rounded-xl text-[9px] font-black text-center cursor-pointer">YEDEK YÜKLE <input type="file" class="hidden" onchange="importData(this)"></label></div><button onclick="resetSystem()" class="w-full bg-red-500 text-white py-3 rounded-xl text-[9px] font-black uppercase mt-2 shadow-lg">SİSTEMİ SIFIRLA</button></div></div>
                 `;
             }
         };
+
+        // --- POMODORO FUNCTIONS ---
+        function openPomodoro() {
+            const modal = document.getElementById('modal-container');
+            modal.innerHTML = `
+                <div class="bg-white w-full max-w-sm rounded-[3rem] p-8 shadow-2xl text-center">
+                    <div class="flex justify-between items-center mb-6"><h3 class="text-xl font-black uppercase text-gray-800">Odak Modu</h3><button onclick="closeModal()"><i class="fas fa-times text-gray-300"></i></button></div>
+                    <div class="relative w-48 h-48 mx-auto mb-8 flex items-center justify-center">
+                        <svg class="w-full h-full transform -rotate-90">
+                            <circle cx="96" cy="96" r="88" stroke="#f3f4f6" stroke-width="8" fill="transparent" />
+                            <circle id="p-progress" cx="96" cy="96" r="88" stroke="var(--p-color)" stroke-width="8" fill="transparent" stroke-dasharray="553" stroke-dashoffset="553" class="pomodoro-circle" />
+                        </svg>
+                        <div class="absolute inset-0 flex flex-col items-center justify-center">
+                            <span id="p-time" class="text-4xl font-black text-gray-800">25:00</span>
+                            <span id="p-mode" class="text-[10px] font-black uppercase text-primary">Çalışma Zamanı</span>
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="togglePomodoro()" id="p-btn" class="flex-1 bg-primary text-white py-5 rounded-[1.5rem] font-black text-xs shadow-lg active:scale-95 uppercase">BAŞLAT</button>
+                        <button onclick="resetPomodoro()" class="bg-gray-100 text-gray-400 w-16 rounded-[1.5rem] active:scale-95"><i class="fas fa-undo"></i></button>
+                    </div>
+                </div>
+            `;
+            modal.classList.remove('hidden');
+            updatePomodoroUI();
+        }
+
+        function togglePomodoro() {
+            if (pomodoro.active) {
+                clearInterval(pomodoro.timer);
+                pomodoro.active = false;
+                document.getElementById('p-btn').textContent = "DEVAM ET";
+            } else {
+                pomodoro.active = true;
+                document.getElementById('p-btn').textContent = "DURAKLAT";
+                pomodoro.timer = setInterval(() => {
+                    pomodoro.timeLeft--;
+                    if (pomodoro.timeLeft < 0) {
+                        if (pomodoro.mode === 'work') {
+                            pomodoro.mode = 'break'; pomodoro.timeLeft = 300;
+                            state.user.points += 50; storage.save();
+                            alert("Tebrikler! Mola vakti.");
+                        } else {
+                            pomodoro.mode = 'work'; pomodoro.timeLeft = 1500;
+                            alert("Mola bitti! Çalışmaya geri dönelim.");
+                        }
+                    }
+                    updatePomodoroUI();
+                }, 1000);
+            }
+        }
+
+        function resetPomodoro() {
+            clearInterval(pomodoro.timer);
+            pomodoro = { timeLeft: 1500, timer: null, mode: 'work', active: false };
+            updatePomodoroUI();
+            if(document.getElementById('p-btn')) document.getElementById('p-btn').textContent = "BAŞLAT";
+        }
+
+        function updatePomodoroUI() {
+            const timeEl = document.getElementById('p-time');
+            if (!timeEl) return;
+            const m = Math.floor(pomodoro.timeLeft / 60);
+            const s = pomodoro.timeLeft % 60;
+            timeEl.textContent = `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+            
+            const total = pomodoro.mode === 'work' ? 1500 : 300;
+            const progress = 553 - (pomodoro.timeLeft / total) * 553;
+            document.getElementById('p-progress').style.strokeDashoffset = progress;
+            document.getElementById('p-mode').textContent = pomodoro.mode === 'work' ? "Çalışma Zamanı" : "Mola Zamanı";
+        }
+
+        // --- AMBIENT SOUNDS ---
+        function playAmbient(type) {
+            stopAmbient();
+            const urls = {
+                nature: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3',
+                lofi: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3'
+            };
+            ambientAudio = new Audio(urls[type]);
+            ambientAudio.loop = true;
+            ambientAudio.play();
+        }
+
+        function stopAmbient() { if(ambientAudio) { ambientAudio.pause(); ambientAudio = null; } }
+
+        // --- VOICE NOTES ---
+        function openVoiceNotes() {
+            const modal = document.getElementById('modal-container');
+            modal.innerHTML = `
+                <div class="bg-white w-full max-w-sm rounded-[3rem] p-8 shadow-2xl">
+                    <div class="flex justify-between items-center mb-6"><h3 class="text-xl font-black uppercase text-gray-800">Sesli Notlar</h3><button onclick="closeModal()"><i class="fas fa-times text-gray-300"></i></button></div>
+                    <div class="space-y-3 max-h-60 overflow-y-auto mb-6 hide-scrollbar" id="note-list">
+                        ${state.voiceNotes.length === 0 ? '<p class="text-center text-gray-400 text-xs italic">Henüz not yok.</p>' : 
+                        state.voiceNotes.map(n => `
+                            <div class="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                                <p class="text-[8px] font-black text-gray-400 mb-1">${n.date}</p>
+                                <p class="text-[10px] font-bold text-gray-700">${n.text}</p>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <button onclick="recordNote()" id="rec-note-btn" class="w-full bg-primary text-white py-5 rounded-[1.5rem] font-black text-xs shadow-lg active:scale-95 uppercase flex items-center justify-center gap-3">
+                        <i class="fas fa-microphone"></i> NOT KAYDET
+                    </button>
+                </div>
+            `;
+            modal.classList.remove('hidden');
+        }
+
+        async function recordNote() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if(!SpeechRecognition) return alert("Desteklenmiyor.");
+            
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                stream.getTracks().forEach(track => track.stop());
+                
+                const r = new SpeechRecognition();
+                r.lang = 'tr-TR';
+                const btn = document.getElementById('rec-note-btn');
+                
+                r.onstart = () => btn.classList.add('bg-red-500', 'animate-pulse');
+                r.onend = () => { btn.classList.remove('bg-red-500', 'animate-pulse'); };
+                r.onresult = e => {
+                    const txt = e.results[0][0].transcript;
+                    state.voiceNotes.unshift({ date: new Date().toLocaleString('tr-TR'), text: txt });
+                    storage.save();
+                    openVoiceNotes(); // Listeyi yenile
+                };
+                r.start();
+            } catch(e) { alert("Mikrofon izni gerekli."); }
+        }
+
+        // --- GÜNCELLENMİŞ KONU SİSTEMİ ---
+        function openTopicManager() {
+            const modal = document.getElementById('modal-container');
+            modal.innerHTML = `
+                <div class="bg-white w-full max-w-sm rounded-[3rem] p-8 shadow-2xl max-h-[85vh] overflow-y-auto">
+                    <div class="flex justify-between items-center mb-6 sticky top-0 bg-white pt-2 pb-4">
+                        <h3 class="text-xl font-black uppercase text-gray-800">LGS Konuları Yönetimi</h3>
+                        <button onclick="closeModal()" class="text-gray-400"><i class="fas fa-times"></i></button>
+                    </div>
+                    
+                    <div class="space-y-6">
+                        ${state.lgsTopics.map(subject => {
+                            const completedCount = subject.topics.filter(t => t.completed).length;
+                            const totalCount = subject.topics.length;
+                            
+                            return `
+                                <div class="glass-card p-5 rounded-3xl">
+                                    <div class="flex justify-between items-center mb-4">
+                                        <h4 class="text-sm font-black text-gray-800">${subject.subject}</h4>
+                                        <span class="text-xs font-bold ${completedCount === totalCount ? 'text-green-600' : 'text-indigo-600'}">${completedCount}/${totalCount}</span>
+                                    </div>
+                                    
+                                    <div class="space-y-2">
+                                        ${subject.topics.map(topic => `
+                                            <div class="flex items-center justify-between p-3 ${topic.completed ? 'bg-green-50' : 'bg-gray-50'} rounded-2xl">
+                                                <span class="text-xs font-bold ${topic.completed ? 'text-green-700' : 'text-gray-700'}">${topic.name}</span>
+                                                <button onclick="toggleTopic('${subject.subject}', '${topic.id}')" class="px-3 py-1 rounded-lg text-[10px] font-black uppercase ${topic.completed ? 'bg-green-500 text-white' : 'bg-indigo-500 text-white'}">
+                                                    ${topic.completed ? 'Geri Al' : 'Tamamla'}
+                                                </button>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                    
+                                    <div class="mt-4 pt-4 border-t border-gray-100 flex justify-between items-center">
+                                        <span class="text-[10px] text-gray-500">Toplam ${totalCount} konu</span>
+                                        <button onclick="toggleAllTopics('${subject.subject}')" class="px-3 py-1 bg-gray-200 text-gray-700 rounded-lg text-[10px] font-black uppercase">
+                                            ${completedCount === totalCount ? 'Tümünü Geri Al' : 'Tümünü Tamamla'}
+                                        </button>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                    
+                    <div class="mt-6 pt-6 border-t border-gray-200">
+                        <div class="flex justify-between items-center mb-4">
+                            <span class="text-sm font-black text-gray-800">Toplam İlerleme</span>
+                            <span class="text-lg font-black text-green-600">${utils.getTopicCompletionPercentage()}%</span>
+                        </div>
+                        <div class="w-full h-3 bg-gray-100 rounded-full overflow-hidden">
+                            <div class="h-full bg-green-500" style="width: ${utils.getTopicCompletionPercentage()}%"></div>
+                        </div>
+                        <div class="flex justify-center mt-4">
+                            <button onclick="closeModal()" class="w-full bg-gray-800 text-white py-4 rounded-2xl font-black uppercase text-xs shadow-xl">KAPAT</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            modal.classList.remove('hidden');
+        }
+
+        function toggleTopic(subjectName, topicId) {
+            const subject = state.lgsTopics.find(s => s.subject === subjectName);
+            if (!subject) return;
+            
+            const topic = subject.topics.find(t => t.id === topicId);
+            if (topic) {
+                topic.completed = !topic.completed;
+                
+                // Puan ekle/tamamlanma bonusu
+                if (topic.completed) {
+                    state.user.points += 15;
+                    
+                    // Tüm ders konuları tamamlandı mı kontrol et
+                    const allTopicsCompleted = subject.topics.every(t => t.completed);
+                    if (allTopicsCompleted) {
+                        state.user.points += 100;
+                        alert(`🎉 Tebrikler! ${subject.subject} dersinin tüm konularını tamamladın! +100 puan kazandın!`);
+                    }
+                } else {
+                    state.user.points = Math.max(0, state.user.points - 5);
+                }
+                
+                storage.save();
+                router.render();
+                
+                // Modal açıksa yenile
+                if (document.getElementById('modal-container') && !document.getElementById('modal-container').classList.contains('hidden')) {
+                    openTopicManager();
+                }
+            }
+        }
+
+        function toggleAllTopics(subjectName) {
+            const subject = state.lgsTopics.find(s => s.subject === subjectName);
+            if (!subject) return;
+            
+            const allCompleted = subject.topics.every(t => t.completed);
+            const completedCount = subject.topics.filter(t => t.completed).length;
+            const totalCount = subject.topics.length;
+            
+            // Eğer hepsi tamamlanmışsa hepsini geri al, değilse hepsini tamamla
+            const newStatus = !allCompleted;
+            
+            // Puan hesaplama
+            let pointsChange = 0;
+            if (newStatus) {
+                // Tamamlanacak konu sayısı
+                const toComplete = totalCount - completedCount;
+                pointsChange = toComplete * 15;
+                
+                // Bonus: tüm ders tamamlanıyorsa
+                if (toComplete === totalCount) {
+                    pointsChange += 100;
+                }
+            } else {
+                // Geri alınacak konu sayısı
+                pointsChange = -completedCount * 5;
+            }
+            
+            state.user.points = Math.max(0, state.user.points + pointsChange);
+            
+            // Konu durumlarını güncelle
+            subject.topics.forEach(topic => {
+                topic.completed = newStatus;
+            });
+            
+            storage.save();
+            router.render();
+            
+            // Modal açıksa yenile
+            if (document.getElementById('modal-container') && !document.getElementById('modal-container').classList.contains('hidden')) {
+                openTopicManager();
+            }
+        }
+
+        // --- ARKADAŞ SİSTEMİNDE DÜZENLEME ---
+        function openAddFriend() {
+            const modal = document.getElementById('modal-container');
+            modal.innerHTML = `
+                <div class="bg-white w-full max-w-sm rounded-[3rem] p-8 shadow-2xl">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-xl font-black uppercase text-gray-800">Arkadaş Ekle</h3>
+                        <button onclick="closeModal()" class="text-gray-400"><i class="fas fa-times"></i></button>
+                    </div>
+                    
+                    <div class="mb-6">
+                        <h4 class="text-xs font-black uppercase text-gray-400 mb-3">Fotoğraf Seç</h4>
+                        <div class="grid grid-cols-3 gap-3 mb-3">
+                            <button onclick="selectAvatar('👨')" class="p-3 bg-gray-50 rounded-xl hover:bg-indigo-50"><span class="text-2xl">👨</span></button>
+                            <button onclick="selectAvatar('👩')" class="p-3 bg-gray-50 rounded-xl hover:bg-indigo-50"><span class="text-2xl">👩</span></button>
+                            <button onclick="selectAvatar('🧑')" class="p-3 bg-gray-50 rounded-xl hover:bg-indigo-50"><span class="text-2xl">🧑</span></button>
+                            <button onclick="selectAvatar('👦')" class="p-3 bg-gray-50 rounded-xl hover:bg-indigo-50"><span class="text-2xl">👦</span></button>
+                            <button onclick="selectAvatar('👧')" class="p-3 bg-gray-50 rounded-xl hover:bg-indigo-50"><span class="text-2xl">👧</span></button>
+                            <button onclick="selectAvatar('👴')" class="p-3 bg-gray-50 rounded-xl hover:bg-indigo-50"><span class="text-2xl">👴</span></button>
+                        </div>
+                        <input type="text" id="friend-name" placeholder="Arkadaş Adı" class="w-full p-4 bg-gray-50 rounded-2xl text-xs font-bold outline-none mb-3">
+                        <button onclick="addFriend()" class="w-full bg-blue-500 text-white py-4 rounded-2xl font-black uppercase text-xs shadow-xl">EKLE</button>
+                    </div>
+
+                    <div class="border-t pt-4">
+                        <h4 class="text-xs font-black uppercase text-gray-400 mb-3">Sanal Rakipler</h4>
+                        <div class="space-y-2">
+                            ${state.virtualRivals.map(rival => `
+                                <button onclick="addVirtualRival('${rival.name}')" class="w-full p-3 bg-indigo-50 rounded-xl text-xs font-black text-indigo-700 hover:bg-indigo-100">
+                                    + ${rival.name} Ekle
+                                </button>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+            modal.classList.remove('hidden');
+        }
+
+        function openEditFriendModal(friendId) {
+            const friend = state.friends.find(f => f.id == friendId);
+            if (!friend) return;
+            
+            editingFriendId = friendId;
+            
+            const modal = document.getElementById('modal-container');
+            modal.innerHTML = `
+                <div class="bg-white w-full max-w-sm rounded-[3rem] p-8 shadow-2xl">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-xl font-black uppercase text-gray-800">Arkadaşı Düzenle</h3>
+                        <button onclick="closeModal()" class="text-gray-400"><i class="fas fa-times"></i></button>
+                    </div>
+                    
+                    <div class="mb-6">
+                        <h4 class="text-xs font-black uppercase text-gray-400 mb-3">Mevcut Avatar</h4>
+                        <div class="flex justify-center mb-4">
+                            <div class="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center text-4xl shadow-lg">
+                                ${friend.avatar}
+                            </div>
+                        </div>
+                        
+                        <h4 class="text-xs font-black uppercase text-gray-400 mb-3">Yeni Avatar Seç</h4>
+                        <div class="grid grid-cols-3 gap-3 mb-3">
+                            <button onclick="selectEditAvatar('👨')" class="p-3 bg-gray-50 rounded-xl hover:bg-indigo-50 ${friend.avatar === '👨' ? 'border-2 border-blue-500' : ''}"><span class="text-2xl">👨</span></button>
+                            <button onclick="selectEditAvatar('👩')" class="p-3 bg-gray-50 rounded-xl hover:bg-indigo-50 ${friend.avatar === '👩' ? 'border-2 border-blue-500' : ''}"><span class="text-2xl">👩</span></button>
+                            <button onclick="selectEditAvatar('🧑')" class="p-3 bg-gray-50 rounded-xl hover:bg-indigo-50 ${friend.avatar === '🧑' ? 'border-2 border-blue-500' : ''}"><span class="text-2xl">🧑</span></button>
+                            <button onclick="selectEditAvatar('👦')" class="p-3 bg-gray-50 rounded-xl hover:bg-indigo-50 ${friend.avatar === '👦' ? 'border-2 border-blue-500' : ''}"><span class="text-2xl">👦</span></button>
+                            <button onclick="selectEditAvatar('👧')" class="p-3 bg-gray-50 rounded-xl hover:bg-indigo-50 ${friend.avatar === '👧' ? 'border-2 border-blue-500' : ''}"><span class="text-2xl">👧</span></button>
+                            <button onclick="selectEditAvatar('👴')" class="p-3 bg-gray-50 rounded-xl hover:bg-indigo-50 ${friend.avatar === '👴' ? 'border-2 border-blue-500' : ''}"><span class="text-2xl">👴</span></button>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label class="text-xs font-black text-gray-400 uppercase">Arkadaş Adı</label>
+                            <input type="text" id="edit-friend-name" value="${friend.name}" class="w-full p-4 bg-gray-50 rounded-2xl text-xs font-bold outline-none mt-1">
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-3">
+                            <button onclick="saveEditedFriend()" class="bg-blue-500 text-white py-4 rounded-2xl font-black uppercase text-xs shadow-xl">KAYDET</button>
+                            <button onclick="closeModal()" class="bg-gray-300 text-gray-700 py-4 rounded-2xl font-black uppercase text-xs">İPTAL</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            modal.classList.remove('hidden');
+        }
+
+        function selectAvatar(avatar) {
+            document.getElementById('friend-name').dataset.avatar = avatar;
+        }
+
+        function selectEditAvatar(avatar) {
+            document.getElementById('edit-friend-name').dataset.avatar = avatar;
+            // Seçilen avatarı vurgula
+            document.querySelectorAll('[onclick^="selectEditAvatar"]').forEach(btn => {
+                btn.classList.remove('border-2', 'border-blue-500');
+            });
+            event.target.closest('button').classList.add('border-2', 'border-blue-500');
+        }
+
+        function addFriend() {
+            const nameInput = document.getElementById('friend-name');
+            const name = nameInput.value.trim();
+            const avatar = nameInput.dataset.avatar || '👤';
+            
+            if (!name) return alert("İsim giriniz!");
+            
+            state.friends.push({
+                id: Date.now(),
+                name: name,
+                avatar: avatar,
+                points: 1000,
+                score: 400
+            });
+            
+            storage.save();
+            closeModal();
+            router.navigate('friends');
+        }
+
+        function saveEditedFriend() {
+            if (editingFriendId === null) return;
+            
+            const friend = state.friends.find(f => f.id == editingFriendId);
+            if (!friend) return;
+            
+            const nameInput = document.getElementById('edit-friend-name');
+            const name = nameInput.value.trim();
+            const avatar = nameInput.dataset.avatar || friend.avatar;
+            
+            if (!name) return alert("İsim giriniz!");
+            
+            friend.name = name;
+            friend.avatar = avatar;
+            
+            storage.save();
+            closeModal();
+            editingFriendId = null;
+            router.navigate('friends');
+        }
+
+        function addVirtualRival(name) {
+            state.friends.push({
+                id: Date.now(),
+                name: name + ' (Sanal)',
+                avatar: '🤖',
+                points: 2500 + Math.floor(Math.random() * 500),
+                score: 480 + Math.floor(Math.random() * 20),
+                isVirtual: true
+            });
+            
+            storage.save();
+            closeModal();
+            router.navigate('friends');
+        }
+
+        function removeFriend(id) {
+            if (confirm("Bu arkadaşı listeden silmek istediğine emin misin?")) {
+                state.friends = state.friends.filter(f => f.id != id);
+                storage.save();
+                router.navigate('friends');
+            }
+        }
+
+        // --- EXAM SCHEDULE ---
+        function openExamScheduleModal() {
+            const modal = document.getElementById('modal-container');
+            modal.innerHTML = `
+                <div class="bg-white w-full max-w-sm rounded-[3rem] p-8 shadow-2xl">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-xl font-black uppercase text-gray-800">Sınav Tarihi Ekle</h3>
+                        <button onclick="closeModal()" class="text-gray-400"><i class="fas fa-times"></i></button>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label class="text-xs font-black text-gray-400 uppercase">Ders</label>
+                            <select id="exam-subject" class="w-full p-4 bg-gray-50 rounded-2xl text-xs font-bold outline-none border-none">
+                                ${subjects.map(s => `<option value="${s.name}">${s.name}</option>`).join('')}
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-xs font-black text-gray-400 uppercase">Deneme Adı</label>
+                            <input type="text" id="exam-name" placeholder="Örn: Genel Deneme" class="w-full p-4 bg-gray-50 rounded-2xl text-xs font-bold outline-none border-none">
+                        </div>
+                        <div>
+                            <label class="text-xs font-black text-gray-400 uppercase">Tarih</label>
+                            <input type="date" id="exam-date" class="w-full p-4 bg-gray-50 rounded-2xl text-xs font-bold outline-none border-none">
+                        </div>
+                        <button onclick="saveExamSchedule()" class="w-full bg-purple-500 text-white py-4 rounded-2xl font-black uppercase text-xs shadow-xl">KAYDET</button>
+                    </div>
+                </div>
+            `;
+            modal.classList.remove('hidden');
+        }
+
+        function saveExamSchedule() {
+            const subject = document.getElementById('exam-subject').value;
+            const name = document.getElementById('exam-name').value.trim();
+            const date = document.getElementById('exam-date').value;
+            
+            if (!name || !date) return alert("Tüm alanları doldurunuz!");
+            
+            state.examSchedule.push({
+                subject,
+                name,
+                date
+            });
+            
+            storage.save();
+            closeModal();
+            router.navigate('examschedule');
+        }
+
+        function editExamSchedule(idx) {
+            const exam = state.examSchedule[idx];
+            const modal = document.getElementById('modal-container');
+            modal.innerHTML = `
+                <div class="bg-white w-full max-w-sm rounded-[3rem] p-8 shadow-2xl">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-xl font-black uppercase text-gray-800">Tarih Düzenle</h3>
+                        <button onclick="closeModal()" class="text-gray-400"><i class="fas fa-times"></i></button>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label class="text-xs font-black text-gray-400 uppercase">Ders</label>
+                            <select id="exam-subject-${idx}" class="w-full p-4 bg-gray-50 rounded-2xl text-xs font-bold outline-none border-none">
+                                ${subjects.map(s => `<option value="${s.name}" ${s.name === exam.subject ? 'selected' : ''}>${s.name}</option>`).join('')}
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-xs font-black text-gray-400 uppercase">Deneme Adı</label>
+                            <input type="text" id="exam-name-${idx}" value="${exam.name}" class="w-full p-4 bg-gray-50 rounded-2xl text-xs font-bold outline-none border-none">
+                        </div>
+                        <div>
+                            <label class="text-xs font-black text-gray-400 uppercase">Tarih</label>
+                            <input type="date" id="exam-date-${idx}" value="${exam.date}" class="w-full p-4 bg-gray-50 rounded-2xl text-xs font-bold outline-none border-none">
+                        </div>
+                        <button onclick="updateExamSchedule(${idx})" class="w-full bg-purple-500 text-white py-4 rounded-2xl font-black uppercase text-xs shadow-xl">GÜNCELLE</button>
+                    </div>
+                </div>
+            `;
+            modal.classList.remove('hidden');
+        }
+
+        function updateExamSchedule(idx) {
+            state.examSchedule[idx].subject = document.getElementById(`exam-subject-${idx}`).value;
+            state.examSchedule[idx].name = document.getElementById(`exam-name-${idx}`).value;
+            state.examSchedule[idx].date = document.getElementById(`exam-date-${idx}`).value;
+            
+            storage.save();
+            closeModal();
+            router.navigate('examschedule');
+        }
+
+        function deleteExamSchedule(idx) {
+            if (confirm("Bu tarihi silmek istediğine emin misin?")) {
+                state.examSchedule.splice(idx, 1);
+                storage.save();
+                router.navigate('examschedule');
+            }
+        }
+
+        // --- FLASHCARDS ---
+        function openFlashcards(uid) {
+            const u = englishUnits.find(x => x.id === uid); let idx = 0;
+            const modal = document.getElementById('modal-container');
+            const render = () => {
+                const w = u.words[idx];
+                modal.innerHTML = `<div class="bg-white w-full max-w-sm rounded-[3rem] p-8 shadow-2xl text-center"><div class="flex justify-between items-center mb-6"><span class="text-[10px] font-black text-cyan-500 uppercase">${u.name} - ${idx+1}/${u.words.length}</span><button onclick="closeModal()"><i class="fas fa-times text-gray-300"></i></button></div><div class="flashcard mb-10" onclick="this.querySelector('.flashcard-inner').classList.toggle('is-flipped')"><div class="flashcard-inner"><div class="flashcard-front bg-cyan-50 border-2 border-cyan-100 shadow-inner"><div><h2 class="text-4xl font-black text-cyan-800">${w.en}</h2><p class="text-[8px] mt-4 opacity-30 font-black uppercase">TIKLA ÖĞREN</p></div></div><div class="flashcard-back shadow-lg"><div><h2 class="text-4xl font-black text-white">${w.tr}</h2></div></div></div></div><div class="flex gap-2"><button id="kn-btn" class="flex-1 bg-green-500 text-white py-5 rounded-[1.5rem] font-black text-xs shadow-lg active:scale-95 transition-all">BİLİYORUM</button><button id="dkn-btn" class="flex-1 bg-gray-100 text-gray-400 py-5 rounded-[1.5rem] font-black text-xs active:scale-95 transition-all">BİLMİYORUM</button></div></div>`;
+                document.getElementById('kn-btn').onclick = () => { state.learnedWords++; state.user.points += 5; next(); };
+                document.getElementById('dkn-btn').onclick = () => next();
+            };
+            const next = () => { idx++; if(idx < u.words.length) render(); else { storage.save(); closeModal(); alert("Aferin!"); } };
+            render(); modal.classList.remove('hidden');
+        }
 
         // --- CORE FUNCTIONS ---
         function handleProfilePic(input) {
@@ -421,7 +1523,7 @@
 
         function toggleTodo(id) {
             const t = state.todos.find(x => x.id === id);
-            if(t) { t.completed = !t.completed; if(t.completed) state.user.points += 10; storage.save(); router.render(); }
+            if(t) { t.completed = !t.completed; if(t.completed) { state.user.points += 10; state.completedTasks = (state.completedTasks || 0) + 1; } storage.save(); router.render(); }
         }
 
         function editTask(id) {
@@ -432,14 +1534,11 @@
 
         function deleteTask(id) { if(confirm("Silinsin mi?")) { state.todos = state.todos.filter(x => x.id !== id); storage.save(); router.render(); } }
 
-        // --- MOBILE OPTIMIZED SPEECH ---
         function speak(t) {
             if (!window.speechSynthesis) return;
             window.speechSynthesis.cancel();
             const u = new SpeechSynthesisUtterance(t);
-            u.lang = 'tr-TR'; 
-            u.rate = 1.0;
-            u.pitch = 1.1;
+            u.lang = 'tr-TR'; u.rate = 1.0; u.pitch = 1.1;
             window.speechSynthesis.speak(u);
         }
 
@@ -452,17 +1551,9 @@
             input.value = ""; router.render();
             setTimeout(() => {
                 let ans = "Bu harika bir soru! LGS yolunda her zaman yanındayım şampiyon.";
-                if (txt.includes("naber") || txt.includes("nbr") || txt.includes("nabber")) {
-                    const g = ["İyilik, her şey yolunda! Sen nasılsın?", "İyiyim ya sen? Bugün ne yapalım?", "Zıpkın gibiyim!", "Harikayım!"];
-                    ans = g[Math.floor(Math.random() * g.length)];
-                } else if (txt.includes("canım sıkkın") || txt.includes("sıkıldım") || txt.includes("moralim bozuk")) {
-                    ans = "Olabilir, insanız sonuçta. Ama inan bana bu geçecek. İstersen bugünlük hafif bir dersle devam et!";
-                } else if(txt.includes("sınav") || txt.includes("ne zaman") || txt.includes("tarih")) {
-                    ans = `LGS Sınavı ${new Date(state.user.examDate).toLocaleDateString('tr-TR')} tarihinde yapılacak. Önünde ${utils.getDaysLeft()} günün var.`;
-                } else {
-                    const match = state.qa.find(x => txt.includes(x.q.toLowerCase()));
-                    if(match) ans = match.a;
-                }
+                const match = state.qa.find(x => txt.includes(x.q.toLowerCase()));
+                if(match) ans = match.a;
+                else if(txt.includes("sınav")) ans = `LGS Sınavı ${new Date(state.user.examDate).toLocaleDateString('tr-TR')} tarihinde yapılacak. Önünde ${utils.getDaysLeft()} günün var.`;
                 state.messages.push({ sender: 'ai', text: ans });
                 router.render(); storage.save(); speak(ans);
             }, 600);
@@ -470,84 +1561,22 @@
 
         function sendQuickMsg(q) {
             const input = document.getElementById('chat-input');
-            if (input) {
-                input.value = q;
-                sendChat();
-            }
+            if (input) { input.value = q; sendChat(); }
         }
 
-        // AKILLI TELEFONLAR İÇİN GELİŞMİŞ SES TANIMA VE İZİN YÖNETİMİ
         async function startVoiceRec() {
-            const voiceBtn = document.getElementById('voice-btn');
-            
-            // 1. Tarayıcı Desteği Kontrolü
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            if(!SpeechRecognition) {
-                alert("Tarayıcınız ses tanımayı desteklemiyor. Lütfen Chrome veya Safari kullanın.");
-                return;
-            }
-
-            // 2. HTTPS Kontrolü (Mobil tarayıcıların çoğu mikrofon için HTTPS ister)
-            if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost') {
-                alert("Güvenli bağlantı (HTTPS) olmadan mikrofon çalışmayabilir.");
-            }
-
-            // 3. İzinleri Tetikle ve Kontrol Et (navigator.mediaDevices.getUserMedia kullanılarak)
+            if(!SpeechRecognition) return alert("Desteklenmiyor.");
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                // Akış başarıyla alındıysa mikrofon izni var demektir, akışı hemen durdurabiliriz
-                stream.getTracks().forEach(track => track.stop());
-            } catch (err) {
-                console.error("Mikrofon erişim hatası:", err);
-                if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-                    alert("Mikrofon izni reddedildi. Lütfen tarayıcı ayarlarından siteye mikrofon izni verin.");
-                } else {
-                    alert("Mikrofon erişilemiyor. Lütfen başka bir uygulama tarafından kullanılmadığından emin olun.");
-                }
-                return;
-            }
-
-            // 4. Tanımayı Başlat
-            const r = new SpeechRecognition();
-            r.lang = 'tr-TR';
-            r.interimResults = false; // Mobil performansı için sadece kesin sonuçları al
-            r.maxAlternatives = 1;
-            r.continuous = false; // Mobil cihazlarda batarya ve işlem gücü tasarrufu için
-
-            r.onstart = () => {
-                if (voiceBtn) voiceBtn.classList.add('text-red-500', 'animate-pulse');
-                // Dokunsal geri bildirim (destekleyen cihazlarda)
-                if (window.navigator.vibrate) window.navigator.vibrate(50);
-            };
-
-            r.onerror = (e) => {
-                if (voiceBtn) voiceBtn.classList.remove('text-red-500', 'animate-pulse');
-                console.error("Konuşma tanıma hatası:", e.error);
-                if (e.error === 'no-speech') {
-                    // Sessizlik durumu, hata vermeye gerek yok, sadece butonu sıfırla
-                } else if (e.error === 'not-allowed') {
-                    alert("Mikrofon izni gerekli.");
-                }
-            };
-
-            r.onend = () => {
-                if (voiceBtn) voiceBtn.classList.remove('text-red-500', 'animate-pulse');
-            };
-
-            r.onresult = e => {
-                const transcript = e.results[0][0].transcript;
-                const input = document.getElementById('chat-input');
-                if (input) {
-                    input.value = transcript;
-                    sendChat(); // Yazıyı otomatik gönder
-                }
-            };
-            
-            try { 
-                r.start(); 
-            } catch(err) { 
-                console.error("Tanıma başlatma hatası:", err); 
-            }
+                await navigator.mediaDevices.getUserMedia({ audio: true });
+                const r = new SpeechRecognition();
+                r.lang = 'tr-TR';
+                const btn = document.getElementById('voice-btn');
+                r.onstart = () => btn.classList.add('text-red-500', 'animate-pulse');
+                r.onend = () => btn.classList.remove('text-red-500', 'animate-pulse');
+                r.onresult = e => { document.getElementById('chat-input').value = e.results[0][0].transcript; sendChat(); };
+                r.start();
+            } catch(e) { alert("Mikrofon izni gerekli."); }
         }
 
         function openExamModal(id = null) {
@@ -563,9 +1592,9 @@
                             <div class="p-4 bg-indigo-50/50 rounded-3xl border border-indigo-100">
                                 <p class="text-[10px] font-black text-indigo-600 uppercase mb-3">${s.name}</p>
                                 <div class="grid grid-cols-3 gap-2">
-                                    <div><label class="text-[8px] font-bold text-green-600 uppercase block mb-1">Doğru</label><input type="number" id="d-${s.id}" value="${isEdit ? ex.scores[s.id].d : ''}" class="w-full p-2 rounded-xl text-center font-bold outline-none shadow-sm"></div>
-                                    <div><label class="text-[8px] font-bold text-red-500 uppercase block mb-1">Yanlış</label><input type="number" id="y-${s.id}" value="${isEdit ? ex.scores[s.id].y : ''}" class="w-full p-2 rounded-xl text-center font-bold outline-none shadow-sm"></div>
-                                    <div><label class="text-[8px] font-bold text-gray-400 uppercase block mb-1">Boş</label><input type="number" id="b-${s.id}" value="${isEdit ? ex.scores[s.id].b : ''}" class="w-full p-2 rounded-xl text-center font-bold outline-none shadow-sm"></div>
+                                    <div><label class="text-[8px] font-bold text-green-600 block mb-1">D</label><input type="number" id="d-${s.id}" value="${isEdit ? ex.scores[s.id].d : ''}" class="w-full p-2 rounded-xl text-center font-bold outline-none"></div>
+                                    <div><label class="text-[8px] font-bold text-red-500 block mb-1">Y</label><input type="number" id="y-${s.id}" value="${isEdit ? ex.scores[s.id].y : ''}" class="w-full p-2 rounded-xl text-center font-bold outline-none"></div>
+                                    <div><label class="text-[8px] font-bold text-gray-400 block mb-1">B</label><input type="number" id="b-${s.id}" value="${isEdit ? ex.scores[s.id].b : ''}" class="w-full p-2 rounded-xl text-center font-bold outline-none"></div>
                                 </div>
                             </div>
                         `).join('')}
@@ -601,80 +1630,62 @@
             const ex = state.exams.find(e => e.id === id);
             const modal = document.getElementById('modal-container');
             modal.innerHTML = `
-                <div class="bg-white w-full max-w-sm rounded-[2.5rem] p-8 max-h-[85vh] overflow-y-auto hide-scrollbar shadow-2xl">
+                <div class="bg-white w-full max-w-sm rounded-[3rem] p-8 max-h-[85vh] overflow-y-auto hide-scrollbar shadow-2xl">
                     <div class="flex justify-between items-start mb-6">
-                        <div><p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">KARNE</p><h2 class="text-4xl font-black text-primary">${ex.score}</h2><p class="text-xs font-bold text-gray-400">${ex.name}</p></div>
+                        <div><p class="text-[10px] font-black text-gray-400 uppercase">KARNE</p><h2 class="text-4xl font-black text-primary">${ex.score}</h2></div>
                         <button onclick="closeModal()"><i class="fas fa-times text-xl text-gray-300"></i></button>
                     </div>
                     <div class="space-y-3 mb-6">
-                        <h4 class="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Branş Tavsiyeleri</h4>
                         ${subjects.map(s => {
                             const data = ex.scores[s.id];
-                            return `<div class="p-4 bg-gray-50 rounded-2xl border border-gray-100 shadow-sm"><div class="flex justify-between items-center mb-1"><span class="text-[10px] font-black uppercase text-indigo-600">${s.name}</span><span class="text-xs font-black">${data.net} Net</span></div><p class="text-[9px] font-bold text-gray-400 mb-2">${data.d}D | ${data.y}Y | ${data.b}B</p><p class="text-[10px] font-medium text-gray-600 italic">"Branş Hocan: ${utils.getRandomAdvice(data.perc)}"</p></div>`;
+                            return `<div class="p-4 bg-gray-50 rounded-2xl border border-gray-100"><div class="flex justify-between items-center mb-1"><span class="text-[10px] font-black uppercase text-indigo-600">${s.name}</span><span class="text-xs font-black">${data.net} Net</span></div><p class="text-[9px] font-medium text-gray-600 italic">"Hoca: ${utils.getRandomAdvice(data.perc)}"</p></div>`;
                         }).join('')}
                     </div>
-                    <div class="p-6 bg-indigo-900 text-white rounded-[2.5rem] text-center mb-6 shadow-xl border-t-4 border-yellow-400"><i class="fas fa-user-graduate text-3xl mb-3 text-yellow-400"></i><p class="text-[10px] font-black uppercase opacity-60">Rehberlik Servisi</p><p class="text-xs font-semibold mt-2">${ex.score > 450 ? 'Zirvedesin!' : 'Gelişim yolunda emin adımlarla ilerliyorsun.'}</p></div>
-                    <div class="grid grid-cols-2 gap-2"><button onclick="openExamModal(${ex.id})" class="bg-indigo-600 text-white py-4 rounded-2xl font-black uppercase text-[10px] shadow-lg">DÜZENLE</button><button onclick="deleteExam(${ex.id})" class="bg-red-50 text-red-500 py-4 rounded-2xl font-black uppercase text-[10px]">SİL</button></div>
+                    <div class="grid grid-cols-2 gap-2"><button onclick="openExamModal(${ex.id})" class="bg-indigo-600 text-white py-4 rounded-2xl font-black uppercase text-[10px]">DÜZENLE</button><button onclick="deleteExam(${ex.id})" class="bg-red-50 text-red-500 py-4 rounded-2xl font-black uppercase text-[10px]">SİL</button></div>
                 </div>
             `;
             modal.classList.remove('hidden');
         }
 
-        function openFlashcards(uid) {
-            const u = englishUnits.find(x => x.id === uid); let idx = 0;
-            const modal = document.getElementById('modal-container');
-            const render = () => {
-                const w = u.words[idx];
-                modal.innerHTML = `<div class="bg-white w-full max-w-sm rounded-[3rem] p-8 shadow-2xl text-center"><div class="flex justify-between items-center mb-6"><span class="text-[10px] font-black text-cyan-500 uppercase">${u.name} - ${idx+1}/${u.words.length}</span><button onclick="closeModal()"><i class="fas fa-times text-gray-300"></i></button></div><div class="flashcard mb-10" onclick="this.querySelector('.flashcard-inner').classList.toggle('is-flipped')"><div class="flashcard-inner"><div class="flashcard-front bg-cyan-50 border-2 border-cyan-100 shadow-inner"><div><h2 class="text-4xl font-black text-cyan-800">${w.en}</h2><p class="text-[8px] mt-4 opacity-30 font-black uppercase">TIKLA ÖĞREN</p></div></div><div class="flashcard-back shadow-lg"><div><h2 class="text-4xl font-black text-white">${w.tr}</h2></div></div></div></div><div class="flex gap-2"><button id="kn-btn" class="flex-1 bg-green-500 text-white py-5 rounded-[1.5rem] font-black text-xs shadow-lg active:scale-95 transition-all">BİLİYORUM</button><button id="dkn-btn" class="flex-1 bg-gray-100 text-gray-400 py-5 rounded-[1.5rem] font-black text-xs active:scale-95 transition-all">BİLMİYORUM</button></div></div>`;
-                document.getElementById('kn-btn').onclick = () => { state.user.points += 5; next(); };
-                document.getElementById('dkn-btn').onclick = () => next();
-            };
-            const next = () => { idx++; if(idx < u.words.length) render(); else { storage.save(); closeModal(); alert("Bravo! Ünite tamamlandı."); } };
-            render(); modal.classList.remove('hidden');
-        }
+        function deleteExam(id) { if(confirm("Denemeyi silmek istediğine emin misin?")) { state.exams = state.exams.filter(e => e.id !== id); storage.save(); router.render(); } }
 
         function checkAdmin() { if(document.getElementById('pin-in').value === state.user.adminPin) document.getElementById('admin-panel').classList.remove('hidden'); else alert("PIN Hatalı!"); }
         function updateExamDate() { state.user.examDate = document.getElementById('exam-date-in').value; storage.save(); alert("Güncellendi!"); }
-        function addQA() { const q = document.getElementById('new-q').value; const a = document.getElementById('new-a').value; if(q && a) { state.qa.push({q, a}); storage.save(); router.render(); document.getElementById('admin-panel').classList.remove('hidden'); } }
-        function deleteQA(idx) { state.qa.splice(idx, 1); storage.save(); router.render(); document.getElementById('admin-panel').classList.remove('hidden'); }
+        function addQA() { const q = document.getElementById('new-q').value; const a = document.getElementById('new-a').value; if(q && a) { state.qa.push({q, a}); storage.save(); router.render(); } }
+        function deleteQA(idx) { state.qa.splice(idx, 1); storage.save(); router.render(); }
         function exportQA() { const blob = new Blob([JSON.stringify(state.qa, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'qa_bank.json'; a.click(); }
-        function importQA(input) { const fr = new FileReader(); fr.onload = e => { try { const d = JSON.parse(e.target.result); if(Array.isArray(d)) { state.qa = [...state.qa, ...d]; storage.save(); router.render(); alert("Eklendi!"); } } catch(err) { alert("Geçersiz JSON!"); } }; fr.readAsText(input.files[0]); }
+        function importQA(input) { const fr = new FileReader(); fr.onload = e => { try { const d = JSON.parse(e.target.result); if(Array.isArray(d)) { state.qa = [...state.qa, ...d]; storage.save(); router.render(); alert("Eklendi!"); } } catch(err) { alert("Hata!"); } }; fr.readAsText(input.files[0]); }
         function exportData() { const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'backup.json'; a.click(); }
         function importData(input) { const fr = new FileReader(); fr.onload = e => { try { const d = JSON.parse(e.target.result); if(d.qa) { state = {...state, ...d}; storage.save(); router.render(); alert("Yüklendi!"); } } catch(err) { alert("Hata!"); } }; fr.readAsText(input.files[0]); }
         function buyItem(id) { const item = storeItems.find(i => i.id === id); if(state.user.points >= item.price || state.user.purchasedItems?.includes(id)) { if(!state.user.purchasedItems?.includes(id)) { state.user.points -= item.price; if(!state.user.purchasedItems) state.user.purchasedItems = []; state.user.purchasedItems.push(id); } if(item.type === 'theme') { state.user.theme = item.value; document.body.className = "theme-" + item.value; } storage.save(); router.render(); } else alert("Yetersiz Puan!"); }
         
         function initCharts() {
             if(state.exams.length < 1) return;
-            const ctx1 = document.getElementById('mainChart');
-            if(ctx1) new Chart(ctx1, { type: 'line', data: { labels: state.exams.map(e => e.date), datasets: [{ data: state.exams.map(e => e.score), borderColor: '#6366f1', fill: true, tension: 0.4, backgroundColor: 'rgba(99, 102, 241, 0.1)' }] }, options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: false } } } });
-            const ctx2 = document.getElementById('subjectChart');
-            if(ctx2) {
-                const labels = subjects.map(s => s.name);
-                const dataNets = subjects.map(s => { const subExams = state.exams.map(e => parseFloat(e.scores[s.id].net)); return (subExams.reduce((a,b)=>a+b, 0) / state.exams.length).toFixed(1); });
-                new Chart(ctx2, { type: 'bar', data: { labels: labels, datasets: [{ data: dataNets, backgroundColor: ['#6366f1','#f59e0b','#10b981','#ef4444','#8b5cf6','#ec4899'], borderRadius: 10 }] }, options: { plugins: { legend: { display: false } } } });
-            }
+            const ctx = document.getElementById('mainChart');
+            if(ctx) new Chart(ctx, { type: 'line', data: { labels: state.exams.map(e => e.date), datasets: [{ data: state.exams.map(e => e.score), borderColor: '#6366f1', fill: true, tension: 0.4, backgroundColor: 'rgba(99, 102, 241, 0.1)' }] }, options: { plugins: { legend: { display: false } } } });
         }
 
         function updateDashboard() {
-            const u = document.getElementById('user-display'); if(u) u.textContent = state.user.name + " ✨";
-            const p = document.getElementById('points-display'); if(p) p.textContent = state.user.points + " Puan";
-            const c = document.getElementById('cd-days'); if(c) c.textContent = utils.getDaysLeft();
-            const s = document.getElementById('streak-badge'); if(s) s.textContent = `🔥 ${state.user.streak} GÜN`;
-            const a = document.getElementById('header-avatar'); if(a) { if(state.user.profilePic) { a.innerHTML = `<img src="${state.user.profilePic}" class="w-full h-full object-cover">`; } else { a.innerHTML = `<i class="fas fa-user text-lg"></i>`; } }
+            document.getElementById('user-display').textContent = state.user.name + " ✨";
+            document.getElementById('points-display').textContent = state.user.points + " Puan";
+            document.getElementById('level-display').textContent = "Lv. " + state.user.level;
+            document.getElementById('cd-days').textContent = utils.getDaysLeft();
+            const a = document.getElementById('header-avatar');
+            if(a) { if(state.user.profilePic) a.innerHTML = `<img src="${state.user.profilePic}" class="w-full h-full object-cover">`; else a.innerHTML = `<i class="fas fa-user text-lg"></i>`; }
         }
 
-        function closeModal() { document.getElementById('modal-container').classList.add('hidden'); }
+        function closeModal() { 
+            document.getElementById('modal-container').classList.add('hidden'); 
+            resetPomodoro(); 
+            editingFriendId = null;
+        }
+        
         function resetSystem() { if(confirm("TÜM VERİLER SİLİNECEK!")) { localStorage.clear(); location.reload(); } }
 
         window.onload = () => { 
-            storage.load(); 
-            updateDashboard(); 
-            router.navigate('home');
-            
-            // Mobil için ses motorunu uyandır
+            storage.load(); updateDashboard(); router.navigate('home');
             document.body.addEventListener('click', () => { 
-                const u = new SpeechSynthesisUtterance(""); 
-                window.speechSynthesis.speak(u); 
+                const u = new SpeechSynthesisUtterance(""); window.speechSynthesis.speak(u); 
             }, { once: true });
         };
     </script>
