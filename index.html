@@ -62,6 +62,10 @@
         .topic-badge { width: 20px; height: 20px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; margin-right: 8px; }
         .topic-badge.completed { background-color: #10b981; color: white; }
         .topic-badge.pending { background-color: #e5e7eb; color: #6b7280; }
+        
+        .media-preview { max-width: 100%; max-height: 200px; border-radius: 1rem; object-fit: cover; margin-top: 10px; }
+        .voice-note-item { transition: all 0.2s ease; }
+        .voice-note-item:hover { background-color: #f8fafc; }
     </style>
 </head>
 <body class="theme-sakin overflow-hidden">
@@ -160,6 +164,34 @@
             { id: 'din', name: 'Din Kültürü', max: 10, weight: 1 },
             { id: 'ing', name: 'İngilizce', max: 10, weight: 1 }
         ];
+
+        // Ortam sesleri listesi - DÜZELTİLMİŞ URL'ler
+        const ambientSounds = [
+            { id: 'nature', name: '🌿 Doğa', color: 'green' },
+            { id: 'rain', name: '🌧️ Yağmur', color: 'blue' },
+            { id: 'waves', name: '🌊 Dalga', color: 'cyan' },
+            { id: 'forest', name: '🌳 Orman', color: 'emerald' },
+            { id: 'stream', name: '💧 Akarsu', color: 'teal' },
+            { id: 'birds', name: '🐦 Kuş', color: 'lime' },
+            { id: 'white', name: '🤍 Beyaz Gürültü', color: 'gray' },
+            { id: 'piano', name: '🎹 Piyano', color: 'purple' },
+            { id: 'meditation', name: '🧘 Meditasyon', color: 'indigo' },
+            { id: 'lofi', name: '🎧 Lo-Fi', color: 'pink' }
+        ];
+
+        // DÜZELTİLMİŞ Audio URL'leri - Geçerli ses URL'leri
+        const audioUrls = {
+            nature: 'https://assets.mixkit.co/sfx/preview/mixkit-forest-trek-463.mp3',
+            rain: 'https://assets.mixkit.co/sfx/preview/mixkit-soft-rain-ambience-111.mp3',
+            waves: 'https://assets.mixkit.co/sfx/preview/mixkit-ocean-waves-478.mp3',
+            forest: 'https://assets.mixkit.co/sfx/preview/mixkit-deep-forest-577.mp3',
+            stream: 'https://assets.mixkit.co/sfx/preview/mixkit-river-stream-107.mp3',
+            birds: 'https://assets.mixkit.co/sfx/preview/mixkit-sunny-birds-115.mp3',
+            white: 'https://assets.mixkit.co/sfx/preview/mixkit-wind-1165.mp3',
+            piano: 'https://assets.mixkit.co/sfx/preview/mixkit-piano-1171.mp3',
+            meditation: 'https://assets.mixkit.co/sfx/preview/mixkit-meditation-713.mp3',
+            lofi: 'https://assets.mixkit.co/sfx/preview/mixkit-lofi-study-112.mp3'
+        };
 
         // GÜNCELLENMİŞ İNGİLİZCE KELİMELERİ - 8. SINIF MÜFREDATI
         const englishUnits = [
@@ -275,11 +307,12 @@
             }
         ];
 
-        const formulaCards = [
-            { sub: 'Matematik', title: 'Üslü Sayılar', content: '$a^n \\cdot a^m = a^{n+m}$ <br> $(a^n)^m = a^{n \\cdot m}$', icon: 'fa-superscript' },
-            { sub: 'Matematik', title: 'Pisagor Bağıntısı', content: '$a^2 + b^2 = c^2$', icon: 'fa-square-root-variable' },
-            { sub: 'Fen Bilimleri', title: 'Sıvı Basıncı', content: '$P = h \\cdot d \\cdot g$', icon: 'fa-tint' },
-            { sub: 'Fen Bilimleri', title: 'Hız Formülü', content: '$V = \frac{x}{t}$', icon: 'fa-bolt' }
+        // BAŞLANGIÇ BİLGİ KARTLARI (GÜNCELLENEBİLİR)
+        let formulaCards = [
+            { id: 1, sub: 'Matematik', title: 'Üslü Sayılar', content: '$a^n \\cdot a^m = a^{n+m}$ <br> $(a^n)^m = a^{n \\cdot m}$', icon: 'fa-superscript', media: null, mediaType: null },
+            { id: 2, sub: 'Matematik', title: 'Pisagor Bağıntısı', content: '$a^2 + b^2 = c^2$', icon: 'fa-square-root-variable', media: null, mediaType: null },
+            { id: 3, sub: 'Fen Bilimleri', title: 'Sıvı Basıncı', content: '$P = h \\cdot d \\cdot g$', icon: 'fa-tint', media: null, mediaType: null },
+            { id: 4, sub: 'Fen Bilimleri', title: 'Hız Formülü', content: '$V = \frac{x}{t}$', icon: 'fa-bolt', media: null, mediaType: null }
         ];
 
         const leaderboardMock = [
@@ -408,40 +441,44 @@
             }
         ];
 
+        // SANAL RAKİP İSİM HAVUZU
+        const virtualFriendNames = [
+            "Ahmet", "Mehmet", "Ali", "Veli", "Ayşe", "Fatma", "Zeynep", "Elif", "Emre", "Can", 
+            "Berk", "Deniz", "Ece", "Eren", "İrem", "Kaan", "Lara", "Mert", "Nisa", "Onur",
+            "Pınar", "Selin", "Tarık", "Umut", "Yağmur", "Cem", "Derin", "Efe", "Hira", "İdil"
+        ];
+
+        // GÜNCELLENMİŞ BAŞLANGIÇ ARKADAŞLARI
+        const initialFriends = [
+            { id: 1, name: "Ahmet", score: 480.2, points: 1200, avatar: "👨", isVirtual: true, createdAt: new Date().toISOString() },
+            { id: 2, name: "Ayşe", score: 485.5, points: 1250, avatar: "👩", isVirtual: true, createdAt: new Date().toISOString() },
+            { id: 3, name: "Mehmet", score: 475.1, points: 1100, avatar: "🧑", isVirtual: true, createdAt: new Date().toISOString() }
+        ];
+
         // --- STATE ---
         let state = {
             user: { 
                 name: "Can", points: 1250, level: 1, streak: 0, lastDate: null, theme: 'sakin', adminPin: "1234", fontSize: 16, examDate: "2026-06-14", purchasedItems: ['theme_sakin'], lastVisit: "",
-                profilePic: "", targetSchool: "Fen Lisesi", targetScore: 480
+                profilePic: "", targetSchool: "Fen Lisesi", targetScore: 480,
+                bestScore: 0,
+                averageScore: 0,
+                lastFriendUpdate: ""
             },
             todos: [],
             exams: [],
             messages: [],
             voiceNotes: [],
+            formulaCards: formulaCards,
             qa: [
                 { "q": "selam", "a": "Selam! LGS 2026 yolculuğunda yanındayım. Bugün ne yapıyoruz?" },
                 { "q": "günaydın", "a": "Günaydın! Yeni bir gün, yeni bir şans." }
             ],
-            // GÜNCELLENMİŞ LGS KONULARI
             lgsTopics: lgsTopicsData,
-            // BAŞARI RÖTETLERİ
             unlockedBadges: [],
-            // KELİME ÖĞRENME
             learnedWords: 0,
-            // ARKADAŞLIK SİSTEMİ
-            friends: [],
-            // OKUL SINAV TARIHLERİ
+            friends: initialFriends,
             examSchedule: [],
-            // SANAL RAKİPLER
-            virtualRivals: [
-                { name: "Mert", score: 492.5, points: 2950, avatar: "👨", isVirtual: true },
-                { name: "Zeynep", score: 485.3, points: 2780, avatar: "👩", isVirtual: true },
-                { name: "Ali", score: 489.1, points: 2890, avatar: "👨", isVirtual: true },
-                { name: "Elif", score: 483.7, points: 2750, avatar: "👩", isVirtual: true },
-                { name: "Canan", score: 490.8, points: 2820, avatar: "👩", isVirtual: true },
-                { name: "Burak", score: 486.2, points: 2760, avatar: "👨", isVirtual: true }
-            ],
-            // İSTATİSTİKLER
+            virtualRivals: [],
             completedTasks: 0,
             completedTopics: 0
         };
@@ -449,12 +486,14 @@
         let pomodoro = { timeLeft: 1500, timer: null, mode: 'work', active: false };
         let ambientAudio = null;
         let editingFriendId = null;
+        let editingFormulaCardId = null;
+        let selectedMedia = null;
+        let selectedMediaType = null;
 
         const storage = {
             save: () => { 
                 state.user.level = Math.floor(state.user.points / 500) + 1;
                 
-                // Tamamlanan konu sayısını hesapla
                 state.completedTopics = 0;
                 state.lgsTopics.forEach(subject => {
                     subject.topics.forEach(topic => {
@@ -470,10 +509,23 @@
                 if (s) {
                     const saved = JSON.parse(s);
                     
-                    // Eski veri yapısını yeni yapıya dönüştür
                     if (saved.lgsTopics && !Array.isArray(saved.lgsTopics[0]?.topics)) {
                         saved.lgsTopics = lgsTopicsData;
                     }
+                    
+                    if (!saved.friends || !Array.isArray(saved.friends)) {
+                        saved.friends = initialFriends;
+                    }
+                    
+                    if (!saved.formulaCards || !Array.isArray(saved.formulaCards)) {
+                        saved.formulaCards = formulaCards;
+                    }
+                    
+                    saved.friends.forEach(friend => {
+                        if (!friend.createdAt) {
+                            friend.createdAt = new Date().toISOString();
+                        }
+                    });
                     
                     state = { ...state, ...saved, user: { ...state.user, ...saved.user } };
                 }
@@ -481,6 +533,8 @@
                 document.documentElement.style.setProperty('--base-text-size', state.user.fontSize + 'px');
                 checkDailyTasks();
                 checkBadges();
+                
+                updateFriendScores();
             }
         };
 
@@ -522,7 +576,6 @@
                 let pool = perc >= 85 ? advicePool.excellent : perc >= 65 ? advicePool.good : perc >= 40 ? advicePool.average : advicePool.low;
                 return pool[Math.floor(Math.random() * pool.length)];
             },
-            // Konu tamamlanma yüzdesini hesapla
             getTopicCompletionPercentage: () => {
                 let totalTopics = 0;
                 let completedTopics = 0;
@@ -535,12 +588,163 @@
                 });
                 
                 return totalTopics > 0 ? Math.round((completedTopics / totalTopics) * 100) : 0;
+            },
+            formatDate: (dateString) => {
+                const date = new Date(dateString);
+                return date.toLocaleDateString('tr-TR', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
             }
         };
 
         function changeFontSize(dir) {
             state.user.fontSize = Math.min(Math.max(12, state.user.fontSize + dir), 24);
             document.documentElement.style.setProperty('--base-text-size', state.user.fontSize + 'px');
+            storage.save();
+        }
+
+        // --- GÜNLÜK SANAL RAKİP OLUŞTURMA FONKSİYONU ---
+        function generateDailyVirtualFriends() {
+            const today = new Date().toISOString();
+            const existingNames = state.friends.map(f => f.name);
+            
+            const newFriendCount = 2 + Math.floor(Math.random() * 3);
+            
+            for (let i = 0; i < newFriendCount; i++) {
+                let availableNames = virtualFriendNames.filter(name => !existingNames.includes(name));
+                if (availableNames.length === 0) {
+                    availableNames = virtualFriendNames;
+                }
+                
+                const randomName = availableNames[Math.floor(Math.random() * availableNames.length)];
+                existingNames.push(randomName);
+                
+                const avatars = ["👨", "👩", "🧑", "👦", "👧", "👴", "🤖", "😎", "🧠", "🌟"];
+                const randomAvatar = avatars[Math.floor(Math.random() * avatars.length)];
+                
+                let initialScore;
+                const userAvg = state.user.averageScore || 480;
+                
+                if (userAvg > 0) {
+                    const rand = Math.random();
+                    if (rand < 0.3) {
+                        initialScore = userAvg * (1.1 + Math.random() * 0.15);
+                    } else if (rand < 0.7) {
+                        initialScore = userAvg * (0.9 + Math.random() * 0.2);
+                    } else {
+                        initialScore = userAvg * (0.7 + Math.random() * 0.2);
+                    }
+                    
+                    initialScore = Math.min(initialScore, 520);
+                    initialScore = Math.max(initialScore, 400);
+                } else {
+                    initialScore = 450 + Math.random() * 50;
+                }
+                
+                state.friends.push({
+                    id: Date.now() + i,
+                    name: randomName,
+                    avatar: randomAvatar,
+                    score: Math.round(initialScore * 10) / 10,
+                    points: 1000 + Math.floor(initialScore) + Math.floor(Math.random() * 300),
+                    isVirtual: true,
+                    createdAt: today
+                });
+            }
+            
+            const oneWeekAgo = new Date();
+            oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+            
+            state.friends = state.friends.filter(friend => {
+                if (!friend.isVirtual) return true;
+                if (!friend.createdAt) return true;
+                
+                const createdDate = new Date(friend.createdAt);
+                return createdDate > oneWeekAgo;
+            });
+        }
+
+        // --- ARKADAŞ PUANLARINI GÜNCELLEME FONKSİYONU ---
+        function updateFriendScores() {
+            const today = new Date().toLocaleDateString('tr-TR');
+            
+            if (state.user.lastFriendUpdate !== today) {
+                generateDailyVirtualFriends();
+                state.user.lastFriendUpdate = today;
+            }
+            
+            const userAvg = parseFloat(utils.getAverageScore()) || 480;
+            
+            let userBest = 0;
+            state.exams.forEach(exam => {
+                if (parseFloat(exam.score) > userBest) {
+                    userBest = parseFloat(exam.score);
+                }
+            });
+            state.user.bestScore = userBest;
+            
+            state.user.averageScore = userAvg || 480;
+            
+            state.friends.forEach(friend => {
+                if (friend.isVirtual) {
+                    let baseScore;
+                    
+                    if (userAvg > 0) {
+                        const friendType = friend.id % 4;
+                        
+                        switch(friendType) {
+                            case 0:
+                                baseScore = userAvg * (1.1 + Math.random() * 0.1);
+                                break;
+                            case 1:
+                                baseScore = userAvg * (0.95 + Math.random() * 0.1);
+                                break;
+                            case 2:
+                                baseScore = userAvg * (0.8 + Math.random() * 0.1);
+                                break;
+                            case 3:
+                                baseScore = userAvg * (0.7 + Math.random() * 0.6);
+                                break;
+                        }
+                        
+                        const fluctuation = (Math.random() * 0.1) - 0.05;
+                        baseScore = baseScore * (1 + fluctuation);
+                        
+                        baseScore = Math.min(baseScore, 520);
+                        baseScore = Math.max(baseScore, 400);
+                        
+                    } else {
+                        baseScore = 450 + Math.random() * 50;
+                    }
+                    
+                    const oldScore = friend.score || baseScore;
+                    const changeRate = 0.2 + Math.random() * 0.1;
+                    const change = (baseScore - oldScore) * changeRate;
+                    friend.score = oldScore + change;
+                    
+                    friend.points = 1000 + Math.floor(friend.score) + Math.floor(Math.random() * 200);
+                    
+                    friend.score = Math.round(friend.score * 10) / 10;
+                }
+            });
+            
+            state.friends.sort((a, b) => b.score - a.score);
+            
+            if (state.friends.length > 8) {
+                const realFriends = state.friends.filter(f => !f.isVirtual);
+                const virtualFriends = state.friends.filter(f => f.isVirtual);
+                
+                const recentVirtualFriends = virtualFriends
+                    .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
+                    .slice(0, Math.max(5, 8 - realFriends.length));
+                
+                state.friends = [...realFriends, ...recentVirtualFriends];
+            }
+            
             storage.save();
         }
 
@@ -591,7 +795,7 @@
                         <div class="w-full h-4 bg-gray-100 rounded-full overflow-hidden mb-2">
                             <div class="h-full bg-primary progress-bar" style="width: ${progress}%"></div>
                         </div>
-                        <div class="flex justify-between items-center"><span class="text-[10px] font-bold text-gray-400 uppercase">Gelişim %${progress}</span><span class="text-xs font-black text-primary">${avg} Net</span></div>
+                        <div class="flex justify-between items-center"><span class="text-[10px] font-bold text-gray-400 uppercase">Gelişim %${progress}</span><span class="text-xs font-black text-primary">${avg} Puan</span></div>
                     </div>
 
                     <!-- Konu İlerleme -->
@@ -645,15 +849,37 @@
             },
             renderFormulas(c) {
                 c.innerHTML = `
-                    <div class="flex items-center gap-4 mb-4"><button onclick="router.navigate('home')" class="text-primary"><i class="fas fa-arrow-left"></i></button><h2 class="text-xl font-black uppercase">Bilgi Kartları</h2></div>
+                    <div class="flex items-center gap-4 mb-4">
+                        <button onclick="router.navigate('home')" class="text-primary"><i class="fas fa-arrow-left"></i></button>
+                        <h2 class="text-xl font-black uppercase">Bilgi Kartları</h2>
+                        <button onclick="openAddFormulaCard()" class="ml-auto bg-primary text-white px-4 py-2 rounded-xl text-[10px] font-black shadow-lg uppercase">+ Yeni</button>
+                    </div>
                     <div class="grid grid-cols-1 gap-4">
-                        ${formulaCards.map(f => `
-                            <div class="glass-card p-5 rounded-3xl border-t-4 border-primary">
+                        ${state.formulaCards.map(f => `
+                            <div class="glass-card p-5 rounded-3xl border-t-4 border-primary relative">
+                                <div class="absolute top-3 right-3 flex gap-2">
+                                    <button onclick="editFormulaCard(${f.id})" class="w-7 h-7 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center">
+                                        <i class="fas fa-edit text-xs"></i>
+                                    </button>
+                                    <button onclick="deleteFormulaCard(${f.id})" class="w-7 h-7 bg-red-100 text-red-600 rounded-lg flex items-center justify-center">
+                                        <i class="fas fa-trash text-xs"></i>
+                                    </button>
+                                </div>
                                 <div class="flex items-center gap-3 mb-3">
                                     <div class="w-8 h-8 bg-indigo-50 text-primary rounded-xl flex items-center justify-center"><i class="fas ${f.icon}"></i></div>
                                     <div><p class="text-[9px] font-black text-gray-400 uppercase">${f.sub}</p><p class="text-xs font-black text-gray-800">${f.title}</p></div>
                                 </div>
-                                <div class="bg-gray-50 p-4 rounded-2xl text-center text-sm font-bold text-gray-700">${f.content}</div>
+                                <div class="bg-gray-50 p-4 rounded-2xl text-center text-sm font-bold text-gray-700 mb-3">${f.content}</div>
+                                ${f.media ? `
+                                    <div class="mt-3">
+                                        ${f.mediaType === 'image' ? 
+                                            `<img src="${f.media}" class="media-preview w-full">` : 
+                                         f.mediaType === 'video' ?
+                                            `<video controls class="media-preview w-full"><source src="${f.media}" type="video/mp4"></video>` :
+                                            ''
+                                        }
+                                    </div>
+                                ` : ''}
                             </div>
                         `).join('')}
                     </div>
@@ -717,14 +943,14 @@
                     <h2 class="text-lg font-black uppercase tracking-tighter">Başarı Sıralaması</h2>
                     <div class="glass-card p-5 rounded-[2.5rem] shadow-sm mb-4">
                         <div class="space-y-4">
-                            ${state.virtualRivals.map((rival, i) => `
+                            ${state.friends.slice(0, 6).map((rival, i) => `
                                 <div class="flex items-center justify-between p-3 rounded-2xl">
                                     <div class="flex items-center gap-3">
                                         <span class="text-sm font-black text-gray-400">#${i+1}</span>
                                         <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center text-xl shadow-sm">${rival.avatar}</div>
                                         <div><p class="text-xs font-black text-gray-700">${rival.name}</p><p class="text-[8px] font-bold text-indigo-400">${rival.points} Puan</p></div>
                                     </div>
-                                    <div class="text-right text-xs font-black text-primary">${rival.score}</div>
+                                    <div class="text-right text-xs font-black text-primary">${rival.score} Puan</div>
                                 </div>
                             `).join('')}
                         </div>
@@ -814,77 +1040,113 @@
                 `;
             },
             renderFriends(c) {
+                updateFriendScores();
+                
+                // Kullanıcıyı da sıralamaya ekle - PUAN olarak
+                const userAsCompetitor = {
+                    name: state.user.name,
+                    score: state.user.averageScore > 0 ? parseFloat(state.user.averageScore) : 
+                           (state.user.bestScore > 0 ? state.user.bestScore : 480),
+                    points: state.user.points,
+                    avatar: state.user.profilePic ? '📷' : '👤',
+                    isUser: true,
+                    totalPoints: state.user.points
+                };
+                
+                const allCompetitors = [...state.friends, userAsCompetitor];
+                allCompetitors.sort((a, b) => b.score - a.score);
+                
+                const userRank = allCompetitors.findIndex(c => c.isUser) + 1;
+                
                 c.innerHTML = `
                     <div class="flex justify-between items-center mb-4">
                         <h2 class="text-xl font-black uppercase text-blue-600">Arkadaşlık & Rekabet Sistemi</h2>
                         <button onclick="openAddFriend()" class="bg-blue-500 text-white px-4 py-2 rounded-xl text-[10px] font-black shadow-lg uppercase active:scale-95 transition-all">+ Ekle</button>
                     </div>
                     
+                    <!-- SENİN SIRALAMAN -->
+                    <div class="glass-card p-5 rounded-[2.5rem] shadow-sm mb-6 bg-gradient-to-r from-blue-50 to-indigo-50">
+                        <h3 class="text-xs font-black uppercase text-gray-400 mb-4">SENİN SIRALAMAN</h3>
+                        <div class="flex items-center justify-between p-4 bg-white rounded-2xl border-2 border-blue-200">
+                            <div class="flex items-center gap-3">
+                                <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-2xl shadow-sm">
+                                    ${userRank === 1 ? '🥇' : userRank === 2 ? '🥈' : userRank === 3 ? '🥉' : '👤'}
+                                </div>
+                                <div>
+                                    <p class="text-sm font-black text-gray-800">${state.user.name}</p>
+                                    <p class="text-[9px] font-bold text-blue-500">${userRank}. Sırada</p>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-lg font-black text-blue-600">${state.user.averageScore > 0 ? state.user.averageScore.toFixed(1) : '480'} Puan</p>
+                                <p class="text-[8px] font-bold text-gray-400 uppercase">ORTALAMA PUAN</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- ARKADAŞ LİDERLİK TABLOSU -->
                     <div class="glass-card p-5 rounded-[2.5rem] shadow-sm mb-6">
-                        <h3 class="text-xs font-black uppercase text-gray-400 mb-4">Arkadaşlarım</h3>
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-xs font-black uppercase text-gray-400">Liderlik Sıralaması</h3>
+                            <span class="text-[10px] font-black text-blue-500">${allCompetitors.length} Kişi</span>
+                        </div>
                         <div class="space-y-3">
-                            ${state.friends.length === 0 ? '<p class="text-center text-gray-400 text-xs italic">Henüz arkadaş eklemedin.</p>' : 
-                            state.friends.map(friend => `
-                                <div class="flex items-center justify-between p-3 bg-white rounded-2xl border border-gray-100">
+                            ${allCompetitors.slice(0, 10).map((competitor, index) => `
+                                <div class="flex items-center justify-between p-3 ${index < 3 ? 'bg-indigo-50' : 'bg-white'} rounded-2xl border ${index === 0 ? 'border-yellow-300' : index === 1 ? 'border-gray-300' : index === 2 ? 'border-orange-200' : 'border-gray-100'}">
                                     <div class="flex items-center gap-3">
-                                        <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-xl shadow-sm">${friend.avatar}</div>
+                                        <div class="w-10 h-10 ${index === 0 ? 'bg-yellow-100' : index === 1 ? 'bg-gray-100' : index === 2 ? 'bg-orange-100' : 'bg-blue-100'} rounded-full flex items-center justify-center text-xl shadow-sm">
+                                            ${index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : competitor.avatar}
+                                        </div>
                                         <div>
-                                            <p class="text-xs font-black text-gray-700">${friend.name}</p>
-                                            <p class="text-[8px] font-bold text-gray-400">${friend.points} Puan</p>
+                                            <p class="text-xs font-black text-gray-700">${competitor.name}${competitor.isUser ? ' (Siz)' : ''}</p>
+                                            <p class="text-[8px] font-bold text-gray-400">${competitor.points} Puan</p>
                                         </div>
                                     </div>
-                                    <div class="flex items-center gap-2">
-                                        <span class="text-xs font-black text-primary">${friend.score} Net</span>
-                                        <button onclick="openEditFriendModal('${friend.id}')" class="text-blue-400 hover:text-blue-600 px-2">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                        <button onclick="removeFriend('${friend.id}')" class="text-red-400 hover:text-red-600">
-                                            <i class="fas fa-times"></i>
-                                        </button>
+                                    <div class="text-right">
+                                        <p class="text-xs font-black ${index === 0 ? 'text-yellow-600' : index === 1 ? 'text-gray-600' : index === 2 ? 'text-orange-600' : 'text-blue-600'}">
+                                            ${competitor.score.toFixed(1)} Puan
+                                        </p>
+                                        <p class="text-[8px] font-bold text-gray-400">${competitor.score.toFixed(1)}</p>
                                     </div>
                                 </div>
                             `).join('')}
                         </div>
                     </div>
 
-                    <div class="glass-card p-5 rounded-[2.5rem] shadow-sm mb-6">
-                        <h3 class="text-xs font-black uppercase text-gray-400 mb-4">Sanal Rakipler</h3>
-                        <div class="space-y-3">
-                            ${state.virtualRivals.map(rival => `
-                                <div class="flex items-center justify-between p-3 bg-indigo-50 rounded-2xl border border-indigo-100">
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center text-xl shadow-sm">${rival.avatar}</div>
-                                        <div>
-                                            <p class="text-xs font-black text-gray-700">${rival.name}</p>
-                                            <p class="text-[8px] font-bold text-indigo-400">${rival.points} Puan</p>
-                                        </div>
-                                    </div>
-                                    <div class="flex items-center gap-2">
-                                        <span class="text-xs font-black text-indigo-600">${rival.score} Net</span>
-                                        <i class="fas fa-robot text-indigo-300"></i>
-                                    </div>
-                                </div>
-                            `).join('')}
-                        </div>
-                    </div>
-
+                    <!-- REKABET İSTATİSTİKLERİ -->
                     <div class="glass-card p-5 rounded-[2.5rem] shadow-sm">
                         <h3 class="text-xs font-black uppercase text-gray-400 mb-4">Rekabet Durumu</h3>
                         <div class="space-y-4">
-                            ${state.friends.length > 0 ? `
-                                <div class="flex items-center justify-between">
-                                    <span class="text-xs font-bold text-gray-600">Arkadaşlarımın Sıralaması:</span>
-                                    <span class="text-xs font-black text-primary">Toplam ${state.friends.length} kişi</span>
-                                </div>
-                                <div class="flex items-center justify-between">
-                                    <span class="text-xs font-bold text-gray-600">Sınav Ortalaması:</span>
-                                    <span class="text-xs font-black text-primary">${utils.getAverageScore()}</span>
-                                </div>
-                                <div class="flex items-center justify-between">
-                                    <span class="text-xs font-bold text-gray-600">Toplam Puan:</span>
-                                    <span class="text-xs font-black text-primary">${state.user.points}</span>
-                                </div>
-                            ` : '<p class="text-center text-gray-400 text-xs italic">Arkadaş ekleerek rekabet başlat!</p>'}
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-bold text-gray-600">Sıralaman:</span>
+                                <span class="text-xs font-black ${userRank <= 3 ? 'text-yellow-600' : userRank <= Math.ceil(allCompetitors.length / 2) ? 'text-blue-600' : 'text-red-600'}">${userRank}. Sıra</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-bold text-gray-600">Ortalama Puanın:</span>
+                                <span class="text-xs font-black text-blue-600">${state.user.averageScore > 0 ? state.user.averageScore.toFixed(1) : '480'} Puan</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-bold text-gray-600">En Yüksek Puan:</span>
+                                <span class="text-xs font-black text-green-600">${state.user.bestScore > 0 ? state.user.bestScore.toFixed(1) : '480'} Puan</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-bold text-gray-600">1. ile Farkın:</span>
+                                <span class="text-xs font-black ${allCompetitors.length > 0 ? (allCompetitors[0].score - state.user.averageScore > 0 ? 'text-red-600' : 'text-green-600') : 'text-gray-600'}">
+                                    ${allCompetitors.length > 0 ? (allCompetitors[0].score - state.user.averageScore).toFixed(1) : '0'} Puan
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <!-- MOTİVASYON MESAJI -->
+                        <div class="mt-4 pt-4 border-t border-gray-200">
+                            <p class="text-[10px] text-center text-gray-600 italic">
+                                ${userRank <= 3 ? 
+                                    '🎉 Tebrikler! İlk 3\'tesin! Bu başarıyı sürdür!' : 
+                                  userRank <= Math.ceil(allCompetitors.length / 2) ?
+                                    '👍 İyi gidiyorsun! Biraz daha çalışarak ilk sıralara yükselebilirsin!' :
+                                    '💪 Daha çok çalışman gerekiyor. Hadi başla, sen de öne geçebilirsin!'
+                                }
+                            </p>
                         </div>
                     </div>
                 `;
@@ -939,9 +1201,14 @@
                     <div class="glass-card p-6 rounded-[2.5rem] mb-6 shadow-md border border-primary/10">
                         <h3 class="text-sm font-black uppercase mb-4 text-primary"><i class="fas fa-music"></i> Ortam Sesleri</h3>
                         <div class="grid grid-cols-2 gap-3">
-                            <button onclick="playAmbient('nature')" class="p-4 bg-green-50 rounded-2xl text-[10px] font-black uppercase text-green-700 active:scale-95">🌿 DOĞA</button>
-                            <button onclick="playAmbient('lofi')" class="p-4 bg-indigo-50 rounded-2xl text-[10px] font-black uppercase text-indigo-700 active:scale-95">🎧 LO-FI</button>
-                            <button onclick="stopAmbient()" class="col-span-2 p-3 bg-red-50 rounded-2xl text-[10px] font-black uppercase text-red-700">SESİ DURDUR</button>
+                            ${ambientSounds.map(sound => `
+                                <button onclick="playAmbient('${sound.id}')" class="p-4 bg-${sound.color}-50 rounded-2xl text-[10px] font-black uppercase text-${sound.color}-700 active:scale-95 flex items-center justify-center gap-1.5">
+                                    ${sound.name}
+                                </button>
+                            `).join('')}
+                            <button onclick="stopAmbient()" class="col-span-2 p-3 bg-red-50 rounded-2xl text-[10px] font-black uppercase text-red-700 mt-2">
+                                <i class="fas fa-stop mr-1"></i> SESİ DURDUR
+                            </button>
                         </div>
                     </div>
                     <div class="glass-card p-6 rounded-[2.5rem] mb-6 shadow-md border border-primary/10"><h3 class="text-sm font-black uppercase mb-6 text-primary flex items-center gap-2"><i class="fas fa-user-circle"></i> Profil Ayarları</h3><div class="space-y-5"><div class="flex flex-col items-center gap-4 mb-2"><div id="prof-preview" class="w-28 h-28 bg-gray-100 rounded-full flex items-center justify-center overflow-hidden border-4 border-white shadow-xl">${state.user.profilePic ? `<img src="${state.user.profilePic}" class="w-full h-full object-cover">` : '<i class="fas fa-user text-4xl text-gray-300"></i>'}</div><label class="bg-indigo-600 text-white px-6 py-2.5 rounded-2xl text-[10px] font-black uppercase cursor-pointer touch-feedback shadow-lg active:scale-95 transition-all"><i class="fas fa-camera mr-1"></i> Fotoğraf Seç<input type="file" id="prof-file" class="hidden" accept="image/*" onchange="handleProfilePic(this)"></label></div><div class="space-y-1"><label class="text-[9px] font-black text-gray-400 uppercase ml-2">Ad Soyad</label><input type="text" id="prof-name" placeholder="İsim" value="${state.user.name}" class="w-full p-4 bg-gray-50 rounded-2xl text-xs font-bold outline-none"></div><div class="space-y-1"><label class="text-[9px] font-black text-gray-400 uppercase ml-2">Hedef Lise Adı</label><input type="text" id="prof-school" placeholder="Hedef Lise" value="${state.user.targetSchool}" class="w-full p-4 bg-gray-50 rounded-2xl text-xs font-bold outline-none"></div><div class="space-y-1"><label class="text-[9px] font-black text-gray-400 uppercase ml-2">LGS Puan Hedefi</label><input type="number" id="prof-score" placeholder="Hedef Puan" value="${state.user.targetScore}" class="w-full p-4 bg-gray-50 rounded-2xl text-xs font-bold outline-none"></div><button onclick="updateProfile()" class="w-full bg-primary text-white py-4 rounded-2xl font-black uppercase text-xs shadow-xl active:scale-95">KAYDET</button></div></div>
@@ -1022,37 +1289,104 @@
             document.getElementById('p-mode').textContent = pomodoro.mode === 'work' ? "Çalışma Zamanı" : "Mola Zamanı";
         }
 
-        // --- AMBIENT SOUNDS ---
+        // --- DÜZELTİLMİŞ AMBIENT SOUNDS ---
         function playAmbient(type) {
             stopAmbient();
-            const urls = {
-                nature: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3',
-                lofi: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3'
-            };
-            ambientAudio = new Audio(urls[type]);
-            ambientAudio.loop = true;
-            ambientAudio.play();
+            if (audioUrls[type]) {
+                ambientAudio = new Audio(audioUrls[type]);
+                ambientAudio.loop = true;
+                ambientAudio.volume = 0.5;
+                ambientAudio.play().catch(e => {
+                    console.log("Audio play failed:", e);
+                    // Alternatif ses kaynağı
+                    fallbackAmbient(type);
+                });
+                
+                // Kullanıcıya feedback ver
+                const soundNames = {
+                    nature: 'Doğa sesleri',
+                    rain: 'Yağmur sesi',
+                    waves: 'Dalga sesi',
+                    forest: 'Orman sesleri',
+                    stream: 'Akarsu sesi',
+                    birds: 'Kuş sesleri',
+                    white: 'Beyaz gürültü',
+                    piano: 'Piyano müziği',
+                    meditation: 'Meditasyon müziği',
+                    lofi: 'Lo-Fi müzik'
+                };
+                
+                state.messages.push({
+                    sender: 'ai', 
+                    text: `🎵 ${soundNames[type]} başlatıldı. Rahatla ve odaklan!`
+                });
+                storage.save();
+                if(router.currentPage === 'coach') router.render();
+            }
         }
 
-        function stopAmbient() { if(ambientAudio) { ambientAudio.pause(); ambientAudio = null; } }
+        // Alternatif ses kaynakları
+        function fallbackAmbient(type) {
+            const fallbackUrls = {
+                nature: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+                rain: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
+                waves: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3',
+                piano: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3',
+                lofi: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3'
+            };
+            
+            if (fallbackUrls[type]) {
+                ambientAudio = new Audio(fallbackUrls[type]);
+                ambientAudio.loop = true;
+                ambientAudio.volume = 0.5;
+                ambientAudio.play().catch(e => {
+                    alert("Ses dosyası yüklenemedi. Lütfen internet bağlantınızı kontrol edin.");
+                });
+            }
+        }
 
-        // --- VOICE NOTES ---
+        function stopAmbient() { 
+            if(ambientAudio) { 
+                ambientAudio.pause(); 
+                ambientAudio = null; 
+            } 
+        }
+
+        // --- SESLİ NOTLAR (GÜNCELLENMİŞ) ---
         function openVoiceNotes() {
             const modal = document.getElementById('modal-container');
             modal.innerHTML = `
-                <div class="bg-white w-full max-w-sm rounded-[3rem] p-8 shadow-2xl">
-                    <div class="flex justify-between items-center mb-6"><h3 class="text-xl font-black uppercase text-gray-800">Sesli Notlar</h3><button onclick="closeModal()"><i class="fas fa-times text-gray-300"></i></button></div>
-                    <div class="space-y-3 max-h-60 overflow-y-auto mb-6 hide-scrollbar" id="note-list">
-                        ${state.voiceNotes.length === 0 ? '<p class="text-center text-gray-400 text-xs italic">Henüz not yok.</p>' : 
-                        state.voiceNotes.map(n => `
-                            <div class="p-4 bg-gray-50 rounded-2xl border border-gray-100">
-                                <p class="text-[8px] font-black text-gray-400 mb-1">${n.date}</p>
+                <div class="bg-white w-full max-w-sm rounded-[3rem] p-8 shadow-2xl max-h-[85vh] overflow-y-auto">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-xl font-black uppercase text-gray-800">Sesli Notlar</h3>
+                        <button onclick="closeModal()" class="text-gray-400"><i class="fas fa-times"></i></button>
+                    </div>
+                    
+                    <div class="space-y-3 mb-6" id="note-list">
+                        ${state.voiceNotes.length === 0 ? '<p class="text-center text-gray-400 text-xs italic py-8">Henüz not yok.</p>' : 
+                        state.voiceNotes.map((n, idx) => `
+                            <div class="voice-note-item glass-card p-4 rounded-2xl border border-gray-100">
+                                <div class="flex justify-between items-start mb-2">
+                                    <p class="text-[8px] font-black text-gray-400">${utils.formatDate(n.date)}</p>
+                                    <div class="flex gap-2">
+                                        <button onclick="playVoiceNote(${idx})" class="text-blue-500 hover:text-blue-700">
+                                            <i class="fas fa-play text-xs"></i>
+                                        </button>
+                                        <button onclick="editVoiceNote(${idx})" class="text-green-500 hover:text-green-700">
+                                            <i class="fas fa-edit text-xs"></i>
+                                        </button>
+                                        <button onclick="deleteVoiceNote(${idx})" class="text-red-500 hover:text-red-700">
+                                            <i class="fas fa-trash text-xs"></i>
+                                        </button>
+                                    </div>
+                                </div>
                                 <p class="text-[10px] font-bold text-gray-700">${n.text}</p>
                             </div>
                         `).join('')}
                     </div>
+                    
                     <button onclick="recordNote()" id="rec-note-btn" class="w-full bg-primary text-white py-5 rounded-[1.5rem] font-black text-xs shadow-lg active:scale-95 uppercase flex items-center justify-center gap-3">
-                        <i class="fas fa-microphone"></i> NOT KAYDET
+                        <i class="fas fa-microphone"></i> YENİ NOT KAYDET
                     </button>
                 </div>
             `;
@@ -1075,15 +1409,330 @@
                 r.onend = () => { btn.classList.remove('bg-red-500', 'animate-pulse'); };
                 r.onresult = e => {
                     const txt = e.results[0][0].transcript;
-                    state.voiceNotes.unshift({ date: new Date().toLocaleString('tr-TR'), text: txt });
+                    state.voiceNotes.unshift({ 
+                        date: new Date().toISOString(), 
+                        text: txt 
+                    });
                     storage.save();
-                    openVoiceNotes(); // Listeyi yenile
+                    openVoiceNotes();
                 };
                 r.start();
             } catch(e) { alert("Mikrofon izni gerekli."); }
         }
 
-        // --- GÜNCELLENMİŞ KONU SİSTEMİ ---
+        function playVoiceNote(idx) {
+            const note = state.voiceNotes[idx];
+            if (!note) return;
+            
+            speak(note.text);
+        }
+
+        function editVoiceNote(idx) {
+            const note = state.voiceNotes[idx];
+            if (!note) return;
+            
+            const newText = prompt("Notu düzenle:", note.text);
+            if (newText && newText.trim() !== note.text) {
+                note.text = newText.trim();
+                storage.save();
+                openVoiceNotes();
+            }
+        }
+
+        function deleteVoiceNote(idx) {
+            if (confirm("Bu notu silmek istediğine emin misin?")) {
+                state.voiceNotes.splice(idx, 1);
+                storage.save();
+                openVoiceNotes();
+            }
+        }
+
+        // --- BİLGİ KARTLARI (GÜNCELLENMİŞ) ---
+        function openAddFormulaCard() {
+            editingFormulaCardId = null;
+            selectedMedia = null;
+            selectedMediaType = null;
+            
+            const modal = document.getElementById('modal-container');
+            modal.innerHTML = `
+                <div class="bg-white w-full max-w-sm rounded-[3rem] p-8 shadow-2xl max-h-[90vh] overflow-y-auto">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-xl font-black uppercase text-gray-800">Yeni Bilgi Kartı</h3>
+                        <button onclick="closeModal()" class="text-gray-400"><i class="fas fa-times"></i></button>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label class="text-xs font-black text-gray-400 uppercase">Ders</label>
+                            <select id="formula-subject" class="w-full p-4 bg-gray-50 rounded-2xl text-xs font-bold outline-none border-none">
+                                <option value="Matematik">Matematik</option>
+                                <option value="Fen Bilimleri">Fen Bilimleri</option>
+                                <option value="Türkçe">Türkçe</option>
+                                <option value="İnkılap Tarihi">İnkılap Tarihi</option>
+                                <option value="Din Kültürü">Din Kültürü</option>
+                                <option value="İngilizce">İngilizce</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label class="text-xs font-black text-gray-400 uppercase">Başlık</label>
+                            <input type="text" id="formula-title" placeholder="Örn: Üslü Sayılar" class="w-full p-4 bg-gray-50 rounded-2xl text-xs font-bold outline-none">
+                        </div>
+                        
+                        <div>
+                            <label class="text-xs font-black text-gray-400 uppercase">İçerik</label>
+                            <textarea id="formula-content" placeholder="Formül veya açıklama..." class="w-full p-4 bg-gray-50 rounded-2xl text-xs font-bold outline-none h-32"></textarea>
+                        </div>
+                        
+                        <div>
+                            <label class="text-xs font-black text-gray-400 uppercase">İkon</label>
+                            <select id="formula-icon" class="w-full p-4 bg-gray-50 rounded-2xl text-xs font-bold outline-none border-none">
+                                <option value="fa-superscript">fa-superscript</option>
+                                <option value="fa-square-root-variable">fa-square-root-variable</option>
+                                <option value="fa-tint">fa-tint</option>
+                                <option value="fa-bolt">fa-bolt</option>
+                                <option value="fa-calculator">fa-calculator</option>
+                                <option value="fa-atom">fa-atom</option>
+                                <option value="fa-dna">fa-dna</option>
+                                <option value="fa-book">fa-book</option>
+                                <option value="fa-language">fa-language</option>
+                                <option value="fa-history">fa-history</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label class="text-xs font-black text-gray-400 uppercase mb-2 block">Medya Ekle (Resim/Video)</label>
+                            <div class="flex gap-2 mb-3">
+                                <label class="flex-1">
+                                    <input type="file" accept="image/*" class="hidden" onchange="handleMediaUpload(this, 'image')">
+                                    <div class="p-3 bg-blue-50 text-blue-600 rounded-xl text-center text-[10px] font-black uppercase cursor-pointer hover:bg-blue-100">
+                                        <i class="fas fa-image mr-1"></i> Resim
+                                    </div>
+                                </label>
+                                <label class="flex-1">
+                                    <input type="file" accept="video/*" class="hidden" onchange="handleMediaUpload(this, 'video')">
+                                    <div class="p-3 bg-green-50 text-green-600 rounded-xl text-center text-[10px] font-black uppercase cursor-pointer hover:bg-green-100">
+                                        <i class="fas fa-video mr-1"></i> Video
+                                    </div>
+                                </label>
+                            </div>
+                            
+                            ${selectedMedia ? `
+                                <div class="relative">
+                                    ${selectedMediaType === 'image' ? 
+                                        `<img src="${selectedMedia}" class="media-preview w-full rounded-xl">` : 
+                                     selectedMediaType === 'video' ?
+                                        `<video controls class="media-preview w-full rounded-xl"><source src="${selectedMedia}" type="video/mp4"></video>` :
+                                        ''
+                                    }
+                                    <button onclick="removeSelectedMedia()" class="absolute top-2 right-2 w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center">
+                                        <i class="fas fa-times text-xs"></i>
+                                    </button>
+                                </div>
+                            ` : ''}
+                        </div>
+                        
+                        <button onclick="saveFormulaCard()" class="w-full bg-primary text-white py-4 rounded-2xl font-black uppercase text-xs shadow-xl mt-4">
+                            KAYDET
+                        </button>
+                    </div>
+                </div>
+            `;
+            modal.classList.remove('hidden');
+        }
+
+        function editFormulaCard(id) {
+            const card = state.formulaCards.find(f => f.id === id);
+            if (!card) return;
+            
+            editingFormulaCardId = id;
+            selectedMedia = card.media;
+            selectedMediaType = card.mediaType;
+            
+            const modal = document.getElementById('modal-container');
+            modal.innerHTML = `
+                <div class="bg-white w-full max-w-sm rounded-[3rem] p-8 shadow-2xl max-h-[90vh] overflow-y-auto">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-xl font-black uppercase text-gray-800">Bilgi Kartını Düzenle</h3>
+                        <button onclick="closeModal()" class="text-gray-400"><i class="fas fa-times"></i></button>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label class="text-xs font-black text-gray-400 uppercase">Ders</label>
+                            <select id="formula-subject" class="w-full p-4 bg-gray-50 rounded-2xl text-xs font-bold outline-none border-none">
+                                <option value="Matematik" ${card.sub === 'Matematik' ? 'selected' : ''}>Matematik</option>
+                                <option value="Fen Bilimleri" ${card.sub === 'Fen Bilimleri' ? 'selected' : ''}>Fen Bilimleri</option>
+                                <option value="Türkçe" ${card.sub === 'Türkçe' ? 'selected' : ''}>Türkçe</option>
+                                <option value="İnkılap Tarihi" ${card.sub === 'İnkılap Tarihi' ? 'selected' : ''}>İnkılap Tarihi</option>
+                                <option value="Din Kültürü" ${card.sub === 'Din Kültürü' ? 'selected' : ''}>Din Kültürü</option>
+                                <option value="İngilizce" ${card.sub === 'İngilizce' ? 'selected' : ''}>İngilizce</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label class="text-xs font-black text-gray-400 uppercase">Başlık</label>
+                            <input type="text" id="formula-title" value="${card.title}" class="w-full p-4 bg-gray-50 rounded-2xl text-xs font-bold outline-none">
+                        </div>
+                        
+                        <div>
+                            <label class="text-xs font-black text-gray-400 uppercase">İçerik</label>
+                            <textarea id="formula-content" class="w-full p-4 bg-gray-50 rounded-2xl text-xs font-bold outline-none h-32">${card.content}</textarea>
+                        </div>
+                        
+                        <div>
+                            <label class="text-xs font-black text-gray-400 uppercase">İkon</label>
+                            <select id="formula-icon" class="w-full p-4 bg-gray-50 rounded-2xl text-xs font-bold outline-none border-none">
+                                <option value="fa-superscript" ${card.icon === 'fa-superscript' ? 'selected' : ''}>fa-superscript</option>
+                                <option value="fa-square-root-variable" ${card.icon === 'fa-square-root-variable' ? 'selected' : ''}>fa-square-root-variable</option>
+                                <option value="fa-tint" ${card.icon === 'fa-tint' ? 'selected' : ''}>fa-tint</option>
+                                <option value="fa-bolt" ${card.icon === 'fa-bolt' ? 'selected' : ''}>fa-bolt</option>
+                                <option value="fa-calculator" ${card.icon === 'fa-calculator' ? 'selected' : ''}>fa-calculator</option>
+                                <option value="fa-atom" ${card.icon === 'fa-atom' ? 'selected' : ''}>fa-atom</option>
+                                <option value="fa-dna" ${card.icon === 'fa-dna' ? 'selected' : ''}>fa-dna</option>
+                                <option value="fa-book" ${card.icon === 'fa-book' ? 'selected' : ''}>fa-book</option>
+                                <option value="fa-language" ${card.icon === 'fa-language' ? 'selected' : ''}>fa-language</option>
+                                <option value="fa-history" ${card.icon === 'fa-history' ? 'selected' : ''}>fa-history</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label class="text-xs font-black text-gray-400 uppercase mb-2 block">Medya Ekle (Resim/Video)</label>
+                            <div class="flex gap-2 mb-3">
+                                <label class="flex-1">
+                                    <input type="file" accept="image/*" class="hidden" onchange="handleMediaUpload(this, 'image')">
+                                    <div class="p-3 bg-blue-50 text-blue-600 rounded-xl text-center text-[10px] font-black uppercase cursor-pointer hover:bg-blue-100">
+                                        <i class="fas fa-image mr-1"></i> Resim
+                                    </div>
+                                </label>
+                                <label class="flex-1">
+                                    <input type="file" accept="video/*" class="hidden" onchange="handleMediaUpload(this, 'video')">
+                                    <div class="p-3 bg-green-50 text-green-600 rounded-xl text-center text-[10px] font-black uppercase cursor-pointer hover:bg-green-100">
+                                        <i class="fas fa-video mr-1"></i> Video
+                                    </div>
+                                </label>
+                            </div>
+                            
+                            ${selectedMedia ? `
+                                <div class="relative">
+                                    ${selectedMediaType === 'image' ? 
+                                        `<img src="${selectedMedia}" class="media-preview w-full rounded-xl">` : 
+                                     selectedMediaType === 'video' ?
+                                        `<video controls class="media-preview w-full rounded-xl"><source src="${selectedMedia}" type="video/mp4"></video>` :
+                                        ''
+                                    }
+                                    <button onclick="removeSelectedMedia()" class="absolute top-2 right-2 w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center">
+                                        <i class="fas fa-times text-xs"></i>
+                                    </button>
+                                </div>
+                            ` : ''}
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-2">
+                            <button onclick="saveFormulaCard()" class="bg-primary text-white py-4 rounded-2xl font-black uppercase text-xs shadow-xl">
+                                GÜNCELLE
+                            </button>
+                            <button onclick="closeModal()" class="bg-gray-300 text-gray-700 py-4 rounded-2xl font-black uppercase text-xs">
+                                İPTAL
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            modal.classList.remove('hidden');
+        }
+
+        function handleMediaUpload(input, type) {
+            const file = input.files[0];
+            if (!file) return;
+            
+            if (type === 'image' && !file.type.startsWith('image/')) {
+                alert('Lütfen bir resim dosyası seçin!');
+                return;
+            }
+            
+            if (type === 'video' && !file.type.startsWith('video/')) {
+                alert('Lütfen bir video dosyası seçin!');
+                return;
+            }
+            
+            if (file.size > 10 * 1024 * 1024) {
+                alert('Dosya çok büyük! Maksimum 10MB.');
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = e => {
+                selectedMedia = e.target.result;
+                selectedMediaType = type;
+                
+                const modal = document.getElementById('modal-container');
+                if (modal && !modal.classList.contains('hidden')) {
+                    if (editingFormulaCardId) {
+                        editFormulaCard(editingFormulaCardId);
+                    } else {
+                        openAddFormulaCard();
+                    }
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function removeSelectedMedia() {
+            selectedMedia = null;
+            selectedMediaType = null;
+            
+            if (editingFormulaCardId) {
+                editFormulaCard(editingFormulaCardId);
+            } else {
+                openAddFormulaCard();
+            }
+        }
+
+        function saveFormulaCard() {
+            const subject = document.getElementById('formula-subject').value;
+            const title = document.getElementById('formula-title').value.trim();
+            const content = document.getElementById('formula-content').value.trim();
+            const icon = document.getElementById('formula-icon').value;
+            
+            if (!title || !content) {
+                alert('Lütfen başlık ve içerik girin!');
+                return;
+            }
+            
+            const cardData = {
+                id: editingFormulaCardId || Date.now(),
+                sub: subject,
+                title: title,
+                content: content,
+                icon: icon,
+                media: selectedMedia,
+                mediaType: selectedMediaType
+            };
+            
+            if (editingFormulaCardId) {
+                const index = state.formulaCards.findIndex(f => f.id === editingFormulaCardId);
+                if (index !== -1) {
+                    state.formulaCards[index] = cardData;
+                }
+            } else {
+                state.formulaCards.push(cardData);
+            }
+            
+            storage.save();
+            closeModal();
+            router.navigate('formulas');
+        }
+
+        function deleteFormulaCard(id) {
+            if (confirm('Bu bilgi kartını silmek istediğine emin misin?')) {
+                state.formulaCards = state.formulaCards.filter(f => f.id !== id);
+                storage.save();
+                router.navigate('formulas');
+            }
+        }
+
+        // --- KONU SİSTEMİ ---
         function openTopicManager() {
             const modal = document.getElementById('modal-container');
             modal.innerHTML = `
@@ -1152,11 +1801,9 @@
             if (topic) {
                 topic.completed = !topic.completed;
                 
-                // Puan ekle/tamamlanma bonusu
                 if (topic.completed) {
                     state.user.points += 15;
                     
-                    // Tüm ders konuları tamamlandı mı kontrol et
                     const allTopicsCompleted = subject.topics.every(t => t.completed);
                     if (allTopicsCompleted) {
                         state.user.points += 100;
@@ -1169,7 +1816,6 @@
                 storage.save();
                 router.render();
                 
-                // Modal açıksa yenile
                 if (document.getElementById('modal-container') && !document.getElementById('modal-container').classList.contains('hidden')) {
                     openTopicManager();
                 }
@@ -1184,28 +1830,22 @@
             const completedCount = subject.topics.filter(t => t.completed).length;
             const totalCount = subject.topics.length;
             
-            // Eğer hepsi tamamlanmışsa hepsini geri al, değilse hepsini tamamla
             const newStatus = !allCompleted;
             
-            // Puan hesaplama
             let pointsChange = 0;
             if (newStatus) {
-                // Tamamlanacak konu sayısı
                 const toComplete = totalCount - completedCount;
                 pointsChange = toComplete * 15;
                 
-                // Bonus: tüm ders tamamlanıyorsa
                 if (toComplete === totalCount) {
                     pointsChange += 100;
                 }
             } else {
-                // Geri alınacak konu sayısı
                 pointsChange = -completedCount * 5;
             }
             
             state.user.points = Math.max(0, state.user.points + pointsChange);
             
-            // Konu durumlarını güncelle
             subject.topics.forEach(topic => {
                 topic.completed = newStatus;
             });
@@ -1213,13 +1853,12 @@
             storage.save();
             router.render();
             
-            // Modal açıksa yenile
             if (document.getElementById('modal-container') && !document.getElementById('modal-container').classList.contains('hidden')) {
                 openTopicManager();
             }
         }
 
-        // --- ARKADAŞ SİSTEMİNDE DÜZENLEME ---
+        // --- ARKADAŞ SİSTEMİ (GÜNCELLENMİŞ) ---
         function openAddFriend() {
             const modal = document.getElementById('modal-container');
             modal.innerHTML = `
@@ -1246,11 +1885,15 @@
                     <div class="border-t pt-4">
                         <h4 class="text-xs font-black uppercase text-gray-400 mb-3">Sanal Rakipler</h4>
                         <div class="space-y-2">
-                            ${state.virtualRivals.map(rival => `
-                                <button onclick="addVirtualRival('${rival.name}')" class="w-full p-3 bg-indigo-50 rounded-xl text-xs font-black text-indigo-700 hover:bg-indigo-100">
-                                    + ${rival.name} Ekle
-                                </button>
-                            `).join('')}
+                            <button onclick="addVirtualRival('Mert')" class="w-full p-3 bg-indigo-50 rounded-xl text-xs font-black text-indigo-700 hover:bg-indigo-100">
+                                + Mert Ekle
+                            </button>
+                            <button onclick="addVirtualRival('Zeynep')" class="w-full p-3 bg-indigo-50 rounded-xl text-xs font-black text-indigo-700 hover:bg-indigo-100">
+                                + Zeynep Ekle
+                            </button>
+                            <button onclick="addVirtualRival('Ali')" class="w-full p-3 bg-indigo-50 rounded-xl text-xs font-black text-indigo-700 hover:bg-indigo-100">
+                                + Ali Ekle
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -1311,10 +1954,6 @@
 
         function selectEditAvatar(avatar) {
             document.getElementById('edit-friend-name').dataset.avatar = avatar;
-            // Seçilen avatarı vurgula
-            document.querySelectorAll('[onclick^="selectEditAvatar"]').forEach(btn => {
-                btn.classList.remove('border-2', 'border-blue-500');
-            });
             event.target.closest('button').classList.add('border-2', 'border-blue-500');
         }
 
@@ -1330,10 +1969,13 @@
                 name: name,
                 avatar: avatar,
                 points: 1000,
-                score: 400
+                score: 480 + Math.random() * 40,
+                isVirtual: true,
+                createdAt: new Date().toISOString()
             });
             
             storage.save();
+            updateFriendScores();
             closeModal();
             router.navigate('friends');
         }
@@ -1354,6 +1996,7 @@
             friend.avatar = avatar;
             
             storage.save();
+            updateFriendScores();
             closeModal();
             editingFriendId = null;
             router.navigate('friends');
@@ -1364,12 +2007,14 @@
                 id: Date.now(),
                 name: name + ' (Sanal)',
                 avatar: '🤖',
-                points: 2500 + Math.floor(Math.random() * 500),
-                score: 480 + Math.floor(Math.random() * 20),
-                isVirtual: true
+                points: 1000 + Math.floor(Math.random() * 500),
+                score: 480 + Math.random() * 40,
+                isVirtual: true,
+                createdAt: new Date().toISOString()
             });
             
             storage.save();
+            updateFriendScores();
             closeModal();
             router.navigate('friends');
         }
@@ -1378,6 +2023,7 @@
             if (confirm("Bu arkadaşı listeden silmek istediğine emin misin?")) {
                 state.friends = state.friends.filter(f => f.id != id);
                 storage.save();
+                updateFriendScores();
                 router.navigate('friends');
             }
         }
@@ -1400,8 +2046,16 @@
                             </select>
                         </div>
                         <div>
-                            <label class="text-xs font-black text-gray-400 uppercase">Deneme Adı</label>
-                            <input type="text" id="exam-name" placeholder="Örn: Genel Deneme" class="w-full p-4 bg-gray-50 rounded-2xl text-xs font-bold outline-none border-none">
+                            <label class="text-xs font-black text-gray-400 uppercase">Sınav Türü</label>
+                            <select id="exam-type" class="w-full p-4 bg-gray-50 rounded-2xl text-xs font-bold outline-none border-none">
+                                <option value="1. Sınav">1. Sınav</option>
+                                <option value="2. Sınav">2. Sınav</option>
+                                <option value="3. Sınav">3. Sınav</option>
+                                <option value="Genel Tekrar Sınavı">Genel Tekrar Sınavı</option>
+                                <option value="Deneme Sınavı">Deneme Sınavı</option>
+                                <option value="Yazılı">Yazılı</option>
+                                <option value="Quiz">Quiz</option>
+                            </select>
                         </div>
                         <div>
                             <label class="text-xs font-black text-gray-400 uppercase">Tarih</label>
@@ -1416,14 +2070,14 @@
 
         function saveExamSchedule() {
             const subject = document.getElementById('exam-subject').value;
-            const name = document.getElementById('exam-name').value.trim();
+            const type = document.getElementById('exam-type').value;
             const date = document.getElementById('exam-date').value;
             
-            if (!name || !date) return alert("Tüm alanları doldurunuz!");
+            if (!date) return alert("Tarih seçiniz!");
             
             state.examSchedule.push({
                 subject,
-                name,
+                name: type,
                 date
             });
             
@@ -1450,8 +2104,16 @@
                             </select>
                         </div>
                         <div>
-                            <label class="text-xs font-black text-gray-400 uppercase">Deneme Adı</label>
-                            <input type="text" id="exam-name-${idx}" value="${exam.name}" class="w-full p-4 bg-gray-50 rounded-2xl text-xs font-bold outline-none border-none">
+                            <label class="text-xs font-black text-gray-400 uppercase">Sınav Türü</label>
+                            <select id="exam-type-${idx}" class="w-full p-4 bg-gray-50 rounded-2xl text-xs font-bold outline-none border-none">
+                                <option value="1. Sınav" ${exam.name === '1. Sınav' ? 'selected' : ''}>1. Sınav</option>
+                                <option value="2. Sınav" ${exam.name === '2. Sınav' ? 'selected' : ''}>2. Sınav</option>
+                                <option value="3. Sınav" ${exam.name === '3. Sınav' ? 'selected' : ''}>3. Sınav</option>
+                                <option value="Genel Tekrar Sınavı" ${exam.name === 'Genel Tekrar Sınavı' ? 'selected' : ''}>Genel Tekrar Sınavı</option>
+                                <option value="Deneme Sınavı" ${exam.name === 'Deneme Sınavı' ? 'selected' : ''}>Deneme Sınavı</option>
+                                <option value="Yazılı" ${exam.name === 'Yazılı' ? 'selected' : ''}>Yazılı</option>
+                                <option value="Quiz" ${exam.name === 'Quiz' ? 'selected' : ''}>Quiz</option>
+                            </select>
                         </div>
                         <div>
                             <label class="text-xs font-black text-gray-400 uppercase">Tarih</label>
@@ -1466,7 +2128,7 @@
 
         function updateExamSchedule(idx) {
             state.examSchedule[idx].subject = document.getElementById(`exam-subject-${idx}`).value;
-            state.examSchedule[idx].name = document.getElementById(`exam-name-${idx}`).value;
+            state.examSchedule[idx].name = document.getElementById(`exam-type-${idx}`).value;
             state.examSchedule[idx].date = document.getElementById(`exam-date-${idx}`).value;
             
             storage.save();
@@ -1618,12 +2280,23 @@
                 totalNet += (net * s.weight);
             });
             const score = (194.7 + (totalNet * 1.13)).toFixed(2);
+            
             if(editId && editId !== 'null' && editId !== null) { 
                 const idx = state.exams.findIndex(e => e.id === editId); 
                 state.exams[idx] = { id: editId, name, date: new Date().toLocaleDateString('tr-TR'), scores, score }; 
             }
-            else { state.exams.push({ id: Date.now(), name, date: new Date().toLocaleDateString('tr-TR'), scores, score }); state.user.points += 100; }
-            storage.save(); closeModal(); router.navigate('exams');
+            else { 
+                state.exams.push({ id: Date.now(), name, date: new Date().toLocaleDateString('tr-TR'), scores, score }); 
+                state.user.points += 100; 
+            }
+            
+            storage.save(); 
+            
+            updateFriendScores();
+            storage.save();
+            
+            closeModal(); 
+            router.navigate('exams');
         }
 
         function showExamDetails(id) {
@@ -1647,7 +2320,7 @@
             modal.classList.remove('hidden');
         }
 
-        function deleteExam(id) { if(confirm("Denemeyi silmek istediğine emin misin?")) { state.exams = state.exams.filter(e => e.id !== id); storage.save(); router.render(); } }
+        function deleteExam(id) { if(confirm("Denemeyi silmek istediğine emin misin?")) { state.exams = state.exams.filter(e => e.id !== id); storage.save(); updateFriendScores(); router.render(); } }
 
         function checkAdmin() { if(document.getElementById('pin-in').value === state.user.adminPin) document.getElementById('admin-panel').classList.remove('hidden'); else alert("PIN Hatalı!"); }
         function updateExamDate() { state.user.examDate = document.getElementById('exam-date-in').value; storage.save(); alert("Güncellendi!"); }
@@ -1678,14 +2351,20 @@
             document.getElementById('modal-container').classList.add('hidden'); 
             resetPomodoro(); 
             editingFriendId = null;
+            editingFormulaCardId = null;
+            selectedMedia = null;
+            selectedMediaType = null;
         }
         
         function resetSystem() { if(confirm("TÜM VERİLER SİLİNECEK!")) { localStorage.clear(); location.reload(); } }
 
         window.onload = () => { 
-            storage.load(); updateDashboard(); router.navigate('home');
+            storage.load(); 
+            updateDashboard(); 
+            router.navigate('home');
             document.body.addEventListener('click', () => { 
-                const u = new SpeechSynthesisUtterance(""); window.speechSynthesis.speak(u); 
+                const u = new SpeechSynthesisUtterance(""); 
+                window.speechSynthesis.speak(u); 
             }, { once: true });
         };
     </script>
